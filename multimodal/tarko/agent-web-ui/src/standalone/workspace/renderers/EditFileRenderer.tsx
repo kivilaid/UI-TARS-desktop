@@ -42,6 +42,27 @@ export const EditFileRenderer: React.FC<EditFileRendererProps> = ({
 
   const { oldContent, newContent, path } = diffData;
   const fileName = path ? path.split('/').pop() || path : 'Edited File';
+  
+  // Format path for display - show basename or relative path from ~
+  const formatPathForDisplay = (filePath?: string): string => {
+    if (!filePath) return '';
+    
+    // If path starts with home directory, show from ~
+    const homeDir = process.env.HOME || process.env.USERPROFILE;
+    if (homeDir && filePath.startsWith(homeDir)) {
+      return '~' + filePath.slice(homeDir.length);
+    }
+    
+    // For very long paths, show basename with parent directory
+    const parts = filePath.split('/');
+    if (parts.length > 3) {
+      return '.../' + parts.slice(-2).join('/');
+    }
+    
+    return filePath;
+  };
+  
+  const displayPath = formatPathForDisplay(path);
 
   return (
     <div className="space-y-4">
@@ -221,7 +242,7 @@ const StrReplaceEditorDiffViewer: React.FC<StrReplaceEditorDiffViewerProps> = ({
           <div className="code-editor-status-left">
             <span className="code-editor-status-item text-green-400">+{actualAdditions}</span>
             <span className="code-editor-status-item text-red-400">-{deletions}</span>
-            {filePath && <span className="code-editor-status-item text-gray-400">{filePath}</span>}
+            {displayPath && <span className="code-editor-status-item text-gray-400">{displayPath}</span>}
           </div>
         </div>
       </div>
