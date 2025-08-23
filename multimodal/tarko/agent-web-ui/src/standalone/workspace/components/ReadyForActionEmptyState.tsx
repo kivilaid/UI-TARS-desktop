@@ -11,7 +11,10 @@ interface ReadyForActionEmptyStateProps {
 /**
  * Empty state component displayed when session is active but no content is available
  */
-export const ReadyForActionEmptyState: React.FC<ReadyForActionEmptyStateProps> = ({ title, description }) => {
+export const ReadyForActionEmptyState: React.FC<ReadyForActionEmptyStateProps> = ({
+  title,
+  description,
+}) => {
   return (
     <motion.div
       variants={containerVariants}
@@ -94,9 +97,7 @@ export const ReadyForActionEmptyState: React.FC<ReadyForActionEmptyStateProps> =
               <div className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">
                 Tool Results
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Comprehensive outputs
-              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Comprehensive outputs</div>
             </div>
           </motion.div>
 
@@ -112,9 +113,7 @@ export const ReadyForActionEmptyState: React.FC<ReadyForActionEmptyStateProps> =
               <div className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">
                 Live Updates
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Real-time results
-              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Real-time results</div>
             </div>
           </motion.div>
 

@@ -58,8 +58,6 @@ export const WorkspaceContent: React.FC = () => {
     },
   };
 
-
-
   // Plan view button for Pro users
   const renderPlanButton = () => {
     if (!currentPlan || !currentPlan.hasGeneratedPlan || currentPlan.steps.length === 0)
