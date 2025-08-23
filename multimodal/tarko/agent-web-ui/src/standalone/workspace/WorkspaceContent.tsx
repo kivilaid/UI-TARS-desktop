@@ -6,7 +6,8 @@ import { FiCpu, FiArrowRight, FiLayers } from 'react-icons/fi';
 import { apiService } from '@/common/services/apiService';
 import { normalizeFilePath } from '@/common/utils/pathNormalizer';
 import { getAgentTitle } from '@/common/constants';
-import { EmptyState } from './components/EmptyState';
+import { NoSessionEmptyState } from './components/NoSessionEmptyState';
+import { ReadyForActionEmptyState } from './components/ReadyForActionEmptyState';
 import './Workspace.css';
 
 /**
@@ -170,8 +171,7 @@ export const WorkspaceContent: React.FC = () => {
   // Enhanced empty state when no session
   if (!activeSessionId) {
     return (
-      <EmptyState
-        type="no-session"
+      <NoSessionEmptyState
         title="No Active Session"
         description="Create or select a session to start working. Tool results and detailed information will be displayed here automatically."
       />
@@ -211,8 +211,7 @@ export const WorkspaceContent: React.FC = () => {
             {renderPlanButton()}
           </motion.div>
         ) : (
-          <EmptyState
-            type="ready-for-action"
+          <ReadyForActionEmptyState
             title="Ready for Action"
             description={`Your workspace is active. Start a conversation with ${getAgentTitle()} and watch as tool results, plans, and detailed information appear here in real-time.`}
           />
