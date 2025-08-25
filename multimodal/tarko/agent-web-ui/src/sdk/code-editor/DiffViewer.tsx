@@ -3,6 +3,7 @@ import { DiffEditor } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import parseDiff from 'parse-diff';
 import { normalizeFilePath } from '@/common/utils/pathNormalizer';
+import { getLanguageFromFileName } from '@/common/utils/language';
 import { CodeEditorHeader } from './CodeEditorHeader';
 import './MonacoCodeEditor.css';
 
@@ -13,22 +14,7 @@ interface DiffViewerProps {
   className?: string;
 }
 
-// Get language from filename
-function getLanguage(fileName: string): string {
-  const ext = fileName.split('.').pop()?.toLowerCase() || '';
-  const langMap: Record<string, string> = {
-    js: 'javascript',
-    jsx: 'javascript',
-    ts: 'typescript',
-    tsx: 'typescript',
-    py: 'python',
-    html: 'html',
-    css: 'css',
-    json: 'json',
-    md: 'markdown',
-  };
-  return langMap[ext] || 'plaintext';
-}
+
 
 const EDITOR_OPTIONS: editor.IStandaloneDiffEditorConstructionOptions = {
   readOnly: true,
@@ -117,7 +103,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
     }
   }, [diffContent, fileName]);
 
-  const language = getLanguage(displayFileName);
+  const language = getLanguageFromFileName(displayFileName);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(diffContent);

@@ -3,6 +3,7 @@ import { StandardPanelContent } from '../types/panelContent';
 import { motion } from 'framer-motion';
 import { FiPlay, FiCode, FiTerminal } from 'react-icons/fi';
 import { CodeEditor } from '@/sdk/code-editor';
+import { getLanguageFromInterpreter, getExtensionFromLanguage } from '@/common/utils/language';
 import { FileDisplayMode } from '../types';
 
 interface ScriptResultRendererProps {
@@ -22,39 +23,7 @@ const highlightCommand = (command: string) => {
   );
 };
 
-/**
- * Language to file extension mapping
- */
-const LANGUAGE_EXTENSIONS: Record<string, string> = {
-  javascript: 'js',
-  typescript: 'ts',
-  python: 'py',
-};
 
-/**
- * Get language identifier for syntax highlighting
- */
-const getLanguageFromInterpreter = (interpreter: string): string => {
-  const languageMap: Record<string, string> = {
-    python: 'python',
-    python3: 'python',
-    node: 'javascript',
-    nodejs: 'javascript',
-    bash: 'bash',
-    sh: 'bash',
-    ruby: 'ruby',
-    php: 'php',
-    java: 'java',
-    go: 'go',
-    rust: 'rust',
-    cpp: 'cpp',
-    'c++': 'cpp',
-    gcc: 'c',
-    clang: 'c',
-  };
-
-  return languageMap[interpreter.toLowerCase()] || 'text';
-};
 
 /**
  * Renders script execution results with professional code editor and terminal output
@@ -139,7 +108,7 @@ export const ScriptResultRenderer: React.FC<ScriptResultRendererProps> = ({ pane
           <CodeEditor
             code={script || ''}
             language={language}
-            fileName={`script.${LANGUAGE_EXTENSIONS[language]}`}
+            fileName={`script.${getExtensionFromLanguage(language)}`}
             showLineNumbers={true}
             maxHeight={displayMode === 'both' ? '40vh' : '80vh'}
           />

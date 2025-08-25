@@ -5,6 +5,7 @@ import { MessageContent } from './generic/components/MessageContent';
 import { DisplayMode } from './generic/types';
 import { MonacoCodeEditor } from '@/sdk/code-editor';
 import { useStableCodeContent } from '@/common/hooks/useStableValue';
+import { getLanguageFromFileName } from '@/common/utils/language';
 import { ThrottledHtmlRenderer } from '../components/ThrottledHtmlRenderer';
 
 // Constants
@@ -46,38 +47,7 @@ export const FileResultRenderer: React.FC<FileResultRendererProps> = ({
   const isStreaming = panelContent.isStreaming || false;
 
   // Get language for code highlighting
-  const getLanguage = (): string => {
-    const langMap: Record<string, string> = {
-      js: 'javascript',
-      jsx: 'jsx',
-      ts: 'typescript',
-      tsx: 'tsx',
-      py: 'python',
-      rb: 'ruby',
-      java: 'java',
-      html: 'html',
-      css: 'css',
-      json: 'json',
-      yaml: 'yaml',
-      yml: 'yaml',
-      md: 'markdown',
-      xml: 'xml',
-      sh: 'bash',
-      bash: 'bash',
-      go: 'go',
-      c: 'c',
-      cpp: 'cpp',
-      rs: 'rust',
-      php: 'php',
-      sql: 'sql',
-      scss: 'scss',
-      less: 'less',
-      vue: 'vue',
-      svelte: 'svelte',
-    };
-
-    return langMap[fileExtension] || fileExtension || 'text';
-  };
+  const language = getLanguageFromFileName(fileName);
 
   // Format file size
   function formatBytes(bytes: number): string {
@@ -124,7 +94,7 @@ export const FileResultRenderer: React.FC<FileResultRendererProps> = ({
             <div className="p-0">
               <MonacoCodeEditor
                 code={stableContent}
-                language={getLanguage()}
+                language={language}
                 fileName={fileName}
                 filePath={filePath}
                 fileSize={approximateSize}
