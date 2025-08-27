@@ -267,22 +267,37 @@ export class ThinkingMessageHandler
 
     set(messagesAtom, (prev: Record<string, Message[]>) => {
       const sessionMessages = prev[sessionId] || [];
-      const lastAssistantIndex = [...sessionMessages]
-        .reverse()
-        .findIndex((m) => m.role === 'assistant');
+      const eventMessageId = event.messageId;
+      let existingMessageIndex = -1;
 
-      if (lastAssistantIndex !== -1) {
-        const actualIndex = sessionMessages.length - 1 - lastAssistantIndex;
-        const message = sessionMessages[actualIndex];
+      // First try to find by messageId if available
+      if (eventMessageId) {
+        existingMessageIndex = sessionMessages.findIndex(
+          (msg) => msg.messageId === eventMessageId && msg.role === 'assistant',
+        );
+      }
 
+      // If not found by messageId, try to find the last assistant message
+      if (existingMessageIndex === -1) {
+        const lastAssistantIndex = [...sessionMessages]
+          .reverse()
+          .findIndex((m) => m.role === 'assistant');
+        if (lastAssistantIndex !== -1) {
+          existingMessageIndex = sessionMessages.length - 1 - lastAssistantIndex;
+        }
+      }
+
+      if (existingMessageIndex !== -1) {
+        // Update existing assistant message
+        const message = sessionMessages[existingMessageIndex];
         let newThinking: string;
 
         if (event.type === 'assistant_streaming_thinking_message') {
           // For streaming thinking messages, use messageId to determine if this is a new thinking session
-          const currentThinkingMessageId = message.messageId;
-          const isNewThinkingSession = !currentThinkingMessageId || 
-                                      !event.messageId || 
-                                      currentThinkingMessageId !== event.messageId;
+          const currentMessageId = message.messageId;
+          const isNewThinkingSession = !eventMessageId || 
+                                      !currentMessageId || 
+                                      currentMessageId !== eventMessageId;
           
           newThinking = isNewThinkingSession
             ? event.content
@@ -295,14 +310,28 @@ export class ThinkingMessageHandler
         return {
           ...prev,
           [sessionId]: [
-            ...sessionMessages.slice(0, actualIndex),
-            { ...message, thinking: newThinking, messageId: event.messageId || message.messageId },
-            ...sessionMessages.slice(actualIndex + 1),
+            ...sessionMessages.slice(0, existingMessageIndex),
+            { ...message, thinking: newThinking, messageId: eventMessageId || message.messageId },
+            ...sessionMessages.slice(existingMessageIndex + 1),
           ],
         };
-      }
+      } else {
+        // No existing assistant message found, create a new one with thinking content
+        const newMessage: Message = {
+          id: event.id || uuidv4(),
+          role: 'assistant',
+          content: '',
+          timestamp: event.timestamp,
+          thinking: event.content,
+          messageId: eventMessageId,
+          isStreaming: event.type === 'assistant_streaming_thinking_message' && !event.isComplete,
+        };
 
-      return prev;
+        return {
+          ...prev,
+          [sessionId]: [...sessionMessages, newMessage],
+        };
+      }
     });
   }
 }
