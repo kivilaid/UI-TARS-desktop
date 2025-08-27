@@ -245,6 +245,11 @@ export class ThinkingMessageHandler
       | AgentEventStream.AssistantStreamingThinkingMessageEvent
     >
 {
+  // Track the last streaming thinking event to detect new thinking sessions
+  private lastStreamingEvent: Record<string, { timestamp: number; eventId: string }> = {};
+  // Track whether the last event was a final thinking message
+  private lastWasFinalThinking: Record<string, boolean> = {};
+
   canHandle(
     event: AgentEventStream.Event,
   ): event is
@@ -275,11 +280,37 @@ export class ThinkingMessageHandler
         const actualIndex = sessionMessages.length - 1 - lastAssistantIndex;
         const message = sessionMessages[actualIndex];
 
+        let newThinking: string;
+
+        if (event.type === 'assistant_streaming_thinking_message') {
+          const lastEvent = this.lastStreamingEvent[sessionId];
+          const timeDiff = lastEvent ? event.timestamp - lastEvent.timestamp : 0;
+          const wasFinalThinking = this.lastWasFinalThinking[sessionId] || false;
+          
+          // Start a new thinking session if:
+          // 1. There's no existing thinking content, OR
+          // 2. The last event was a final thinking message, OR  
+          // 3. There's a significant time gap (> 2 seconds)
+          const isNewThinkingSession = !message.thinking || wasFinalThinking || timeDiff > 2000;
+          
+          newThinking = isNewThinkingSession
+            ? event.content
+            : (message.thinking || '') + event.content;
+            
+          this.lastStreamingEvent[sessionId] = { timestamp: event.timestamp, eventId: event.id };
+          this.lastWasFinalThinking[sessionId] = false;
+        } else {
+          // For final thinking messages, always replace the content
+          newThinking = event.content;
+          // Mark that the last event was a final thinking message
+          this.lastWasFinalThinking[sessionId] = true;
+        }
+
         return {
           ...prev,
           [sessionId]: [
             ...sessionMessages.slice(0, actualIndex),
-            { ...message, thinking: event.content },
+            { ...message, thinking: newThinking },
             ...sessionMessages.slice(actualIndex + 1),
           ],
         };
