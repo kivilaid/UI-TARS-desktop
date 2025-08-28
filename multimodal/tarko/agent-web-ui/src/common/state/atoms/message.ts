@@ -8,15 +8,14 @@ import { Message, MessageGroup } from '@/common/types';
 export const messagesAtom = atom<Record<string, Message[]>>({});
 
 /**
- * Atom for storing grouped messages for each session
- * Key is the session ID, value is an array of message groups for that session
- * This is derived from messagesAtom but with messages properly grouped
+ * Derived atom for grouped messages by session
+ * Simplified grouping logic - groups by messageId for assistant messages,
+ * individual groups for others
  */
 export const groupedMessagesAtom = atom<Record<string, MessageGroup[]>>((get) => {
   const allMessages = get(messagesAtom);
   const result: Record<string, MessageGroup[]> = {};
 
-  // Process each session's messages into groups
   Object.entries(allMessages).forEach(([sessionId, messages]) => {
     result[sessionId] = createMessageGroups(messages);
   });
@@ -25,35 +24,25 @@ export const groupedMessagesAtom = atom<Record<string, MessageGroup[]>>((get) =>
 });
 
 /**
- * Group messages into logical conversation groups
- *
- * The grouping logic creates groups based on:
- * 1. User messages always start a new group
- * 2. System messages are standalone groups
- * 3. Assistant/environment messages that belong together are grouped
- * 4. Thinking/processing sequences are properly maintained
+ * Simplified message grouping logic
+ * Groups messages by:
+ * 1. User messages start new groups
+ * 2. Assistant messages with same messageId are grouped together
+ * 3. System/environment messages are standalone
  */
 function createMessageGroups(messages: Message[]): MessageGroup[] {
   if (!messages.length) return [];
 
   const groups: MessageGroup[] = [];
   let currentGroup: Message[] = [];
-  let currentThinkingSequence: {
-    startIndex: number;
-    messages: Message[];
-  } | null = null;
 
-  // Process messages in order
-  for (let i = 0; i < messages.length; i++) {
-    const message = messages[i];
-
+  for (const message of messages) {
     // User messages always start a new group
     if (message.role === 'user') {
       if (currentGroup.length > 0) {
         groups.push({ messages: [...currentGroup] });
       }
       currentGroup = [message];
-      currentThinkingSequence = null;
       continue;
     }
 
@@ -64,50 +53,34 @@ function createMessageGroups(messages: Message[]): MessageGroup[] {
       }
       groups.push({ messages: [message] });
       currentGroup = [];
-      currentThinkingSequence = null;
       continue;
     }
 
-    // Process assistant and environment messages
+    // Assistant/environment messages - check for messageId grouping
     if (message.role === 'assistant' || message.role === 'environment') {
-      // Check if this is the start of a thinking sequence
-      if (
-        message.role === 'assistant' &&
-        currentGroup.length > 0 &&
-        currentGroup[currentGroup.length - 1].role === 'user' &&
-        (!message.finishReason || message.finishReason !== 'stop')
-      ) {
-        // Create new thinking sequence
-        currentThinkingSequence = {
-          startIndex: currentGroup.length,
-          messages: [message],
-        };
-        currentGroup.push(message);
-        continue;
-      }
+      // If this assistant message has a different messageId from the last assistant message in current group,
+      // it should start a new group (different thinking/response cycle)
+      if (message.role === 'assistant' && message.messageId) {
+        const lastAssistantInGroup = currentGroup
+          .slice()
+          .reverse()
+          .find((m) => m.role === 'assistant');
 
-      // Continue existing thinking sequence
-      if (currentThinkingSequence && (!message.finishReason || message.finishReason !== 'stop')) {
-        currentThinkingSequence.messages.push(message);
-        currentGroup.push(message);
-        continue;
-      }
-
-      // Handle final answer in a thinking sequence
-      if (message.role === 'assistant' && message.finishReason === 'stop') {
-        if (currentThinkingSequence) {
-          currentThinkingSequence.messages.push(message);
-          currentGroup.push(message);
-          currentThinkingSequence = null;
-          continue;
-        } else {
-          // Standalone final answer
-          currentGroup.push(message);
+        if (
+          lastAssistantInGroup &&
+          lastAssistantInGroup.messageId &&
+          lastAssistantInGroup.messageId !== message.messageId
+        ) {
+          // Different messageId means this is a new assistant response cycle
+          if (currentGroup.length > 0) {
+            groups.push({ messages: [...currentGroup] });
+          }
+          currentGroup = [message];
           continue;
         }
       }
 
-      // Default: add to current group
+      // Add to current group
       currentGroup.push(message);
     }
   }

@@ -6,7 +6,62 @@ import { activePanelContentAtom, isProcessingAtom } from '@/common/state/atoms/u
 import { shouldUpdatePanelContent } from '../utils/panelContentUpdater';
 import { ChatCompletionContentPartImage } from '@tarko/agent-interface';
 
-export class UserMessageHandler implements EventHandler<AgentEventStream.UserMessageEvent> {
+/**
+ * Base message handler with unified update logic
+ */
+class BaseMessageHandler {
+  protected updateOrCreateMessage(
+    context: EventHandlerContext,
+    sessionId: string,
+    messageUpdate: Partial<Message> & { id: string },
+  ): void {
+    const { set } = context;
+
+    set(messagesAtom, (prev: Record<string, Message[]>) => {
+      const sessionMessages = prev[sessionId] || [];
+      const messageId = messageUpdate.messageId;
+      const eventId = messageUpdate.id;
+
+      // Find existing message by messageId (preferred) or id
+      let existingIndex = -1;
+      if (messageId) {
+        existingIndex = sessionMessages.findIndex(
+          (msg) => msg.messageId === messageId && msg.role === messageUpdate.role,
+        );
+      }
+      if (existingIndex === -1) {
+        existingIndex = sessionMessages.findIndex((msg) => msg.id === eventId);
+      }
+
+      if (existingIndex !== -1) {
+        // Update existing message
+        const updatedMessages = [...sessionMessages];
+        updatedMessages[existingIndex] = {
+          ...updatedMessages[existingIndex],
+          ...messageUpdate,
+        };
+        return {
+          ...prev,
+          [sessionId]: updatedMessages,
+        };
+      } else {
+        // Create new message
+        const newMessage: Message = {
+          role: 'assistant', // default role
+          content: '',
+          timestamp: Date.now(),
+          ...messageUpdate,
+        };
+        return {
+          ...prev,
+          [sessionId]: [...sessionMessages, newMessage],
+        };
+      }
+    });
+  }
+}
+
+export class UserMessageHandler extends BaseMessageHandler implements EventHandler<AgentEventStream.UserMessageEvent> {
   canHandle(event: AgentEventStream.Event): event is AgentEventStream.UserMessageEvent {
     return event.type === 'user_message';
   }
@@ -18,19 +73,11 @@ export class UserMessageHandler implements EventHandler<AgentEventStream.UserMes
   ): void {
     const { get, set } = context;
 
-    const userMessage: Message = {
+    this.updateOrCreateMessage(context, sessionId, {
       id: event.id,
       role: 'user',
       content: event.content,
       timestamp: event.timestamp,
-    };
-
-    set(messagesAtom, (prev: Record<string, Message[]>) => {
-      const sessionMessages = prev[sessionId] || [];
-      return {
-        ...prev,
-        [sessionId]: [...sessionMessages, userMessage],
-      };
     });
 
     // Auto-show user uploaded images in workspace panel (only for active session)
@@ -60,7 +107,7 @@ export class UserMessageHandler implements EventHandler<AgentEventStream.UserMes
   }
 }
 
-export class AssistantMessageHandler
+export class AssistantMessageHandler extends BaseMessageHandler
   implements EventHandler<AgentEventStream.AssistantMessageEvent>
 {
   canHandle(event: AgentEventStream.Event): event is AgentEventStream.AssistantMessageEvent {
@@ -73,54 +120,18 @@ export class AssistantMessageHandler
     event: AgentEventStream.AssistantMessageEvent,
   ): void {
     const { get, set } = context;
-    const messageId = event.messageId;
 
-    set(messagesAtom, (prev: Record<string, Message[]>) => {
-      const sessionMessages = prev[sessionId] || [];
-
-      // Update existing message if messageId matches, otherwise create new
-      if (messageId) {
-        const existingMessageIndex = sessionMessages.findIndex(
-          (msg) => msg.messageId === messageId,
-        );
-
-        if (existingMessageIndex !== -1) {
-          const updatedMessages = [...sessionMessages];
-          updatedMessages[existingMessageIndex] = {
-            ...updatedMessages[existingMessageIndex],
-            content: event.content,
-            timestamp: event.timestamp,
-            toolCalls: event.toolCalls,
-            finishReason: event.finishReason,
-            isStreaming: false,
-            ttftMs: event.ttftMs,
-            ttltMs: event.ttltMs,
-          };
-
-          return {
-            ...prev,
-            [sessionId]: updatedMessages,
-          };
-        }
-      }
-
-      return {
-        ...prev,
-        [sessionId]: [
-          ...sessionMessages,
-          {
-            id: event.id,
-            role: 'assistant',
-            content: event.content,
-            timestamp: event.timestamp,
-            toolCalls: event.toolCalls,
-            finishReason: event.finishReason,
-            messageId: messageId,
-            ttftMs: event.ttftMs,
-            ttltMs: event.ttltMs,
-          },
-        ],
-      };
+    this.updateOrCreateMessage(context, sessionId, {
+      id: event.id,
+      role: 'assistant',
+      content: event.content,
+      timestamp: event.timestamp,
+      toolCalls: event.toolCalls,
+      finishReason: event.finishReason,
+      messageId: event.messageId,
+      isStreaming: false,
+      ttftMs: event.ttftMs,
+      ttltMs: event.ttltMs,
     });
 
     if (event.finishReason !== 'tool_calls' && shouldUpdatePanelContent(get, sessionId)) {
@@ -160,7 +171,7 @@ export class AssistantMessageHandler
   }
 }
 
-export class StreamingMessageHandler
+export class StreamingMessageHandler extends BaseMessageHandler
   implements EventHandler<AgentEventStream.AssistantStreamingMessageEvent>
 {
   canHandle(
@@ -174,49 +185,39 @@ export class StreamingMessageHandler
     sessionId: string,
     event: AgentEventStream.AssistantStreamingMessageEvent,
   ): void {
-    const { set } = context;
+    const { get, set } = context;
+    const sessionMessages = get(messagesAtom)[sessionId] || [];
+    
+    // Find existing streaming message by messageId or last streaming assistant message
+    let existingMessage: Message | undefined;
+    
+    if (event.messageId) {
+      existingMessage = sessionMessages.find(
+        (msg) => msg.messageId === event.messageId && msg.role === 'assistant'
+      );
+    }
+    
+    // Fallback to last streaming assistant message if no messageId match
+    if (!existingMessage) {
+      existingMessage = sessionMessages
+        .slice()
+        .reverse()
+        .find((msg) => msg.role === 'assistant' && msg.isStreaming);
+    }
 
-    set(messagesAtom, (prev: Record<string, Message[]>) => {
-      const sessionMessages = prev[sessionId] || [];
-      const messageIdToFind = event.messageId;
-      let existingMessageIndex = -1;
-
-      // Find by messageId first, fallback to last streaming message
-      if (messageIdToFind) {
-        existingMessageIndex = sessionMessages.findIndex(
-          (msg) => msg.messageId === messageIdToFind,
-        );
-      } else if (sessionMessages.length > 0) {
-        const lastMessageIndex = sessionMessages.length - 1;
-        const lastMessage = sessionMessages[lastMessageIndex];
-        if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isStreaming) {
-          existingMessageIndex = lastMessageIndex;
-        }
-      }
-
-      if (existingMessageIndex !== -1) {
-        const existingMessage = sessionMessages[existingMessageIndex];
-        const updatedMessage = {
-          ...existingMessage,
-          content:
-            typeof existingMessage.content === 'string'
-              ? existingMessage.content + event.content
-              : event.content,
-          isStreaming: !event.isComplete,
-          toolCalls: event.toolCalls || existingMessage.toolCalls,
-        };
-
-        return {
-          ...prev,
-          [sessionId]: [
-            ...sessionMessages.slice(0, existingMessageIndex),
-            updatedMessage,
-            ...sessionMessages.slice(existingMessageIndex + 1),
-          ],
-        };
-      }
-
-      const newMessage: Message = {
+    if (existingMessage) {
+      // Append to existing streaming message
+      const currentContent = typeof existingMessage.content === 'string' ? existingMessage.content : '';
+      this.updateOrCreateMessage(context, sessionId, {
+        id: existingMessage.id,
+        content: currentContent + event.content,
+        isStreaming: !event.isComplete,
+        toolCalls: event.toolCalls || existingMessage.toolCalls,
+        messageId: event.messageId || existingMessage.messageId,
+      });
+    } else {
+      // Create new streaming message
+      this.updateOrCreateMessage(context, sessionId, {
         id: event.id || uuidv4(),
         role: 'assistant',
         content: event.content,
@@ -224,13 +225,8 @@ export class StreamingMessageHandler
         isStreaming: !event.isComplete,
         toolCalls: event.toolCalls,
         messageId: event.messageId,
-      };
-
-      return {
-        ...prev,
-        [sessionId]: [...sessionMessages, newMessage],
-      };
-    });
+      });
+    }
 
     if (event.isComplete) {
       set(isProcessingAtom, false);
@@ -238,7 +234,7 @@ export class StreamingMessageHandler
   }
 }
 
-export class ThinkingMessageHandler
+export class ThinkingMessageHandler extends BaseMessageHandler
   implements
     EventHandler<
       | AgentEventStream.AssistantThinkingMessageEvent
@@ -263,75 +259,46 @@ export class ThinkingMessageHandler
       | AgentEventStream.AssistantThinkingMessageEvent
       | AgentEventStream.AssistantStreamingThinkingMessageEvent,
   ): void {
-    const { set } = context;
+    const { get } = context;
+    const sessionMessages = get(messagesAtom)[sessionId] || [];
+    
+    // Find existing assistant message with same messageId
+    let existingMessage: Message | undefined;
+    
+    if (event.messageId) {
+      existingMessage = sessionMessages.find(
+        (msg) => msg.messageId === event.messageId && msg.role === 'assistant'
+      );
+    }
 
-    set(messagesAtom, (prev: Record<string, Message[]>) => {
-      const sessionMessages = prev[sessionId] || [];
-      const eventMessageId = event.messageId;
-      let existingMessageIndex = -1;
-
-      // First try to find by messageId if available
-      if (eventMessageId) {
-        existingMessageIndex = sessionMessages.findIndex(
-          (msg) => msg.messageId === eventMessageId && msg.role === 'assistant',
-        );
-      }
-
-      // If not found by messageId, try to find the last assistant message
-      if (existingMessageIndex === -1) {
-        const lastAssistantIndex = [...sessionMessages]
-          .reverse()
-          .findIndex((m) => m.role === 'assistant');
-        if (lastAssistantIndex !== -1) {
-          existingMessageIndex = sessionMessages.length - 1 - lastAssistantIndex;
-        }
-      }
-
-      if (existingMessageIndex !== -1) {
-        // Update existing assistant message
-        const message = sessionMessages[existingMessageIndex];
-        let newThinking: string;
-
-        if (event.type === 'assistant_streaming_thinking_message') {
-          // For streaming thinking messages, use messageId to determine if this is a new thinking session
-          const currentMessageId = message.messageId;
-          const isNewThinkingSession = !eventMessageId || 
-                                      !currentMessageId || 
-                                      currentMessageId !== eventMessageId;
-          
-          newThinking = isNewThinkingSession
-            ? event.content
-            : (message.thinking || '') + event.content;
-        } else {
-          // For final thinking messages, always replace the content
-          newThinking = event.content;
-        }
-
-        return {
-          ...prev,
-          [sessionId]: [
-            ...sessionMessages.slice(0, existingMessageIndex),
-            { ...message, thinking: newThinking, messageId: eventMessageId || message.messageId },
-            ...sessionMessages.slice(existingMessageIndex + 1),
-          ],
-        };
+    if (existingMessage) {
+      // Update existing assistant message with thinking content
+      let newThinking: string;
+      if (event.type === 'assistant_streaming_thinking_message') {
+        // For streaming: append to existing thinking content
+        newThinking = (existingMessage.thinking || '') + event.content;
       } else {
-        // No existing assistant message found, create a new one with thinking content
-        const newMessage: Message = {
-          id: event.id || uuidv4(),
-          role: 'assistant',
-          content: '',
-          timestamp: event.timestamp,
-          thinking: event.content,
-          messageId: eventMessageId,
-          isStreaming: event.type === 'assistant_streaming_thinking_message' && !event.isComplete,
-        };
-
-        return {
-          ...prev,
-          [sessionId]: [...sessionMessages, newMessage],
-        };
+        // For final: replace thinking content
+        newThinking = event.content;
       }
-    });
+
+      this.updateOrCreateMessage(context, sessionId, {
+        id: existingMessage.id,
+        thinking: newThinking,
+        messageId: event.messageId || existingMessage.messageId,
+        isStreaming: event.type === 'assistant_streaming_thinking_message' && !event.isComplete,
+      });
+    } else {
+      // Create new assistant message with thinking content
+      this.updateOrCreateMessage(context, sessionId, {
+        id: event.id || uuidv4(),
+        role: 'assistant',
+        content: '',
+        timestamp: event.timestamp,
+        thinking: event.content,
+        messageId: event.messageId,
+        isStreaming: event.type === 'assistant_streaming_thinking_message' && !event.isComplete,
+      });
+    }
   }
 }
