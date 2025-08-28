@@ -42,7 +42,6 @@ interface OAuthProviderOptions {
 
 interface ClientMetadata {
   redirect_uris: string[];
-  // secretlint-disable-next-line @secretlint/secretlint-rule-pattern
   token_endpoint_auth_method: string;
   grant_types: string[];
   response_types: string[];
@@ -134,7 +133,6 @@ export default class MCPHubOAuthProvider {
   get clientMetadata(): ClientMetadata {
     return {
       redirect_uris: [this.redirectUrl],
-      // secretlint-disable-next-line @secretlint/secretlint-rule-pattern
       token_endpoint_auth_method: 'none',
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
