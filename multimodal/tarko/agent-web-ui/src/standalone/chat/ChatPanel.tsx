@@ -3,11 +3,10 @@ import { useSession } from '@/common/hooks/useSession';
 import { MessageGroup } from './Message/components/MessageGroup';
 import { MessageInput } from './MessageInput';
 import { ActionBar } from './ActionBar';
-import { Message } from '@/common/types';
 import { FiInfo, FiMessageSquare, FiRefreshCw, FiWifiOff, FiPlay, FiX } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAtomValue } from 'jotai';
-import { sortedMessagesAtom, messagesAtom } from '@/common/state/atoms/message';
+import { groupedMessagesAtom, messagesAtom } from '@/common/state/atoms/message';
 import { replayStateAtom } from '@/common/state/atoms/replay';
 import { useReplayMode } from '@/common/hooks/useReplayMode';
 import { useReplay } from '@/common/hooks/useReplay';
@@ -74,45 +73,13 @@ const CountdownCircle: React.FC<{ seconds: number; total: number }> = ({ seconds
  */
 export const ChatPanel: React.FC = () => {
   const { activeSessionId, isProcessing, connectionStatus, checkServerStatus } = useSession();
-  const sortedMessages = useAtomValue(sortedMessagesAtom);
+  const groupedMessages = useAtomValue(groupedMessagesAtom);
   const allMessages = useAtomValue(messagesAtom);
   const replayState = useAtomValue(replayStateAtom);
   const { isReplayMode, cancelAutoPlay } = useReplayMode();
 
-  // Use messages from current session - simple sorted list
-  const sessionMessages = activeSessionId ? sortedMessages[activeSessionId] || [] : [];
-  
-  // Simple message grouping at component level - group by messageId
-  const activeMessages = React.useMemo(() => {
-    if (!sessionMessages.length) return [];
-    
-    const groups: { messages: Message[] }[] = [];
-    const messageGroups = new Map<string, Message[]>();
-    
-    // Group messages by messageId, or create individual groups for messages without messageId
-    sessionMessages.forEach(message => {
-      if (message.messageId) {
-        if (!messageGroups.has(message.messageId)) {
-          messageGroups.set(message.messageId, []);
-        }
-        messageGroups.get(message.messageId)!.push(message);
-      } else {
-        // Messages without messageId get their own group
-        groups.push({ messages: [message] });
-      }
-    });
-    
-    // Add grouped messages (sorted by first message timestamp)
-    const groupedEntries = Array.from(messageGroups.entries())
-      .map(([messageId, msgs]) => ({ messageId, messages: msgs.sort((a, b) => a.timestamp - b.timestamp) }))
-      .sort((a, b) => a.messages[0].timestamp - b.messages[0].timestamp);
-    
-    groupedEntries.forEach(({ messages }) => {
-      groups.push({ messages });
-    });
-    
-    return groups.sort((a, b) => a.messages[0].timestamp - b.messages[0].timestamp);
-  }, [sessionMessages]);
+  // Use messages from current session
+  const activeMessages = activeSessionId ? groupedMessages[activeSessionId] || [] : [];
 
   // Auto-scroll functionality
   const {
