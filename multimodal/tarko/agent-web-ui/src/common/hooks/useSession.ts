@@ -76,13 +76,11 @@ export function useSession() {
     checkSessionStatus(activeSessionId);
   }, [activeSessionId, connectionStatus.connected, checkSessionStatus, isReplayMode]);
 
-  // Enhanced socket handler for session status sync - do not update state in replay mode
+  // Socket handler for session status sync
   const handleSessionStatusUpdate = useCallback(
     (status: any) => {
       if (status && typeof status.isProcessing === 'boolean' && !isReplayMode) {
         setIsProcessing(status.isProcessing);
-
-        // Update enhanced agent status for TTFT optimization
         setAgentStatus({
           isProcessing: status.isProcessing,
           state: status.state,

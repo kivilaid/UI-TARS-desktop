@@ -78,7 +78,7 @@ export const ChatPanel: React.FC = () => {
   const replayState = useAtomValue(replayStateAtom);
   const { isReplayMode, cancelAutoPlay } = useReplayMode();
 
-  // Use grouped messages from current session - simplified approach
+  // Use grouped messages from current session
   const activeMessages = activeSessionId ? groupedMessages[activeSessionId] || [] : [];
 
   // Auto-scroll functionality
@@ -92,7 +92,7 @@ export const ChatPanel: React.FC = () => {
     threshold: 100,
     debounceMs: 150,
     autoScrollDelay: 2000,
-    dependencies: [activeMessages, isProcessing], // Trigger scroll on message changes
+    dependencies: [activeMessages, isProcessing],
   });
 
   // Animation variants
