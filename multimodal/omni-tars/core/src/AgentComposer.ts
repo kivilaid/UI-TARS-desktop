@@ -124,6 +124,23 @@ export class AgentComposer {
   }
 
   /**
+   * Execute onBeforeToolCall hooks for all plugins
+   */
+  async excuteOnBeforeToolCall(
+    id?: string,
+    toolCall?: { toolCallId: string; name: string },
+    args?: any,
+  ): Promise<any> {
+    let currentArgs = args;
+    for (const plugin of this.plugins) {
+      if (plugin.onBeforeToolCall) {
+        currentArgs = await plugin.onBeforeToolCall(id, toolCall, currentArgs);
+      }
+    }
+    return currentArgs;
+  }
+
+  /**
    * Get list of available environments from plugins
    */
   private getAvailableEnvironments(): string {

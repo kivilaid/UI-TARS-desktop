@@ -16,3 +16,4 @@ export { AgentPlugin } from './AgentPlugin';
 export { parseCodeContent, parseComputerContent, parseMcpContent } from './utils/parser';
 export * from './utils/streamingParser';
 export { getAioUrl, extractAioPort } from './utils/hepler';
+export { Trajectory, ToolCallInfo, ToolCallEntry, TrajectoryOptions } from './utils/trajectory';

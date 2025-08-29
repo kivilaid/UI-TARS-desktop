@@ -60,4 +60,13 @@ export class AgentPlugin {
   async onAgentLoopEnd(): Promise<void> {
     //logic here
   }
+
+  async onBeforeToolCall(
+    id?: string,
+    toolCall?: { toolCallId: string; name: string },
+    args?: any,
+  ): Promise<any> {
+    //logic here
+    return args;
+  }
 }
