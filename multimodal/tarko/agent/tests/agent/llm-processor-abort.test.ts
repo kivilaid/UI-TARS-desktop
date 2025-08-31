@@ -58,20 +58,13 @@ describe('LLMProcessor - Abort Handling', () => {
     expect(assistantEvent.content).toBe('[Request was aborted by user]');
     
     // Snapshot the complete event stream to help maintainers understand the fix
-    // Remove dynamic fields for stable snapshots
-    const eventsForSnapshot = events.map(event => ({
-      ...event,
-      id: 'evt_test_id',
-      timestamp: 1234567890000,
-    }));
-    
-    expect(eventsForSnapshot).toMatchInlineSnapshot(`
+    expect(events).toMatchInlineSnapshot(`
       [
         {
           "content": "[Request was aborted by user]",
           "finishReason": "stop",
-          "id": "evt_test_id",
-          "timestamp": 1234567890000,
+          "id": "385398c4-8fcf-4018-ac88-f6f99ef656a5",
+          "timestamp": 1756638191604,
           "type": "assistant_message",
         },
       ]
