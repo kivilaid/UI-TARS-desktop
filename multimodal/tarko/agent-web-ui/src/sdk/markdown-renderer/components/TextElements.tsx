@@ -1,16 +1,16 @@
 import React from 'react';
 
 /**
- * Text element styles - Updated with merged tailwind classes
+ * Text element styles using semantic CSS classes
+ * Zero runtime overhead, leverages CSS custom properties
  */
 const TEXT_STYLES = {
-  paragraph: 'my-2 text-gray-800 dark:text-gray-200 leading-relaxed text-base',
-  unorderedList: 'my-2 list-disc pl-6 text-gray-800 dark:text-gray-200 text-base',
-  orderedList: 'my-2 list-decimal pl-6 text-gray-800 dark:text-gray-200 text-base',
+  paragraph: 'my-2 md-text-primary leading-relaxed text-base',
+  unorderedList: 'my-2 list-disc pl-6 md-text-primary text-base',
+  orderedList: 'my-2 list-decimal pl-6 md-text-primary text-base',
   listItem: 'my-1 text-base',
-  blockquote:
-    'border-l-4 border-gray-200 dark:border-slate-600 pl-4 my-5 italic text-slate-600 dark:text-slate-400',
-  horizontalRule: 'my-8 border-t border-gray-200 dark:border-gray-700',
+  blockquote: 'border-l-4 md-border-quote pl-4 my-5 italic md-text-muted',
+  horizontalRule: 'my-8 border-t md-border-default',
 };
 
 /**

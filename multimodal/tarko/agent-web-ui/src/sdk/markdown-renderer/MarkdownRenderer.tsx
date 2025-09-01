@@ -12,6 +12,7 @@ import { useDarkMode } from '@/common/hooks/useDarkMode';
 import 'remark-github-blockquote-alert/alert.css';
 import './syntax-highlight.css';
 import './markdown.css';
+import './styles/theme.css';
 
 interface MarkdownRendererProps {
   content: string;

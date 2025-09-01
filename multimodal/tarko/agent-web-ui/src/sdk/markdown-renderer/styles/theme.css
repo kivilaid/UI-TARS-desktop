@@ -1,0 +1,47 @@
+/*
+ * Markdown Theme Variables
+ * Simple CSS custom properties for theme management
+ * Zero runtime overhead, leverages Tailwind's dark: modifier
+ */
+
+.markdown-content {
+  /* Text colors */
+  --md-text-primary: theme('colors.gray.800');
+  --md-text-secondary: theme('colors.gray.700');
+  --md-text-heading: theme('colors.gray.900');
+  --md-text-muted: theme('colors.gray.600');
+  
+  /* Border colors */
+  --md-border-default: theme('colors.gray.200');
+  --md-border-quote: theme('colors.gray.200');
+  
+  /* Background colors */
+  --md-bg-code: theme('colors.gray.50');
+  --md-bg-quote: theme('colors.gray.50');
+}
+
+.markdown-content.dark {
+  /* Dark mode overrides */
+  --md-text-primary: theme('colors.gray.200');
+  --md-text-secondary: theme('colors.gray.300');
+  --md-text-heading: theme('colors.gray.100');
+  --md-text-muted: theme('colors.gray.400');
+  
+  --md-border-default: theme('colors.gray.700');
+  --md-border-quote: theme('colors.slate.600');
+  
+  --md-bg-code: rgb(31 41 55 / 0.5); /* gray-800/50 */
+  --md-bg-quote: rgb(31 41 55 / 0.3); /* gray-800/30 */
+}
+
+/* Semantic utility classes using CSS variables */
+.md-text-primary { color: var(--md-text-primary); }
+.md-text-secondary { color: var(--md-text-secondary); }
+.md-text-heading { color: var(--md-text-heading); }
+.md-text-muted { color: var(--md-text-muted); }
+
+.md-border-default { border-color: var(--md-border-default); }
+.md-border-quote { border-color: var(--md-border-quote); }
+
+.md-bg-code { background-color: var(--md-bg-code); }
+.md-bg-quote { background-color: var(--md-bg-quote); }
