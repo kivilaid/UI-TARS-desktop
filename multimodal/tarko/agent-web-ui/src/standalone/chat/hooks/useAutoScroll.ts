@@ -54,7 +54,7 @@ export const useAutoScroll = ({
   // Smooth scroll to bottom
   const scrollToBottom = useCallback(() => {
     const container = messagesContainerRef.current;
-    if (!container) return;
+    if (!container || isUserScrolling) return; // Respect user scrolling
     
     isAutoScrollingRef.current = true;
     container.scrollTo({
@@ -66,13 +66,15 @@ export const useAutoScroll = ({
     setTimeout(() => {
       isAutoScrollingRef.current = false;
       // Re-check position after scroll animation
-      const atBottom = checkIsAtBottom();
-      setIsAtBottom(atBottom);
-      setShowScrollToBottom(!atBottom && !isUserScrolling);
-    }, 600); // Slightly longer to ensure scroll animation completes
+      if (!isUserScrolling) { // Only update if user hasn't started scrolling
+        const atBottom = checkIsAtBottom();
+        setIsAtBottom(atBottom);
+        setShowScrollToBottom(!atBottom);
+      }
+    }, 800); // Extended timeout for reliable animation completion
   }, [checkIsAtBottom, isUserScrolling]);
 
-  // Handle scroll events with proper debouncing and state management
+  // Handle scroll events with immediate user scroll detection
   const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -80,22 +82,20 @@ export const useAutoScroll = ({
     const currentScrollTop = container.scrollTop;
     const scrollDelta = Math.abs(currentScrollTop - lastScrollTopRef.current);
     
-    // Skip if this is an auto-scroll or very small movement (< 2px)
-    if (isAutoScrollingRef.current || scrollDelta < 2) {
-      lastScrollTopRef.current = currentScrollTop;
+    // Skip very small movements (< 1px) to avoid noise
+    if (scrollDelta < 1) {
       return;
     }
     
     const atBottom = checkIsAtBottom();
     
-    // Batch state updates to prevent conflicts
-    setIsAtBottom(atBottom);
-    
-    // Detect user-initiated scrolling
-    const isUserInitiated = scrollDelta > 5; // More generous threshold
+    // Detect user-initiated scrolling (more sensitive threshold)
+    const isUserInitiated = scrollDelta > 3 && !isAutoScrollingRef.current;
     
     if (isUserInitiated) {
+      // Immediately stop any auto-scroll behavior
       setIsUserScrolling(true);
+      setIsAtBottom(atBottom);
       setShowScrollToBottom(!atBottom);
       
       // Clear existing timeout
@@ -108,10 +108,12 @@ export const useAutoScroll = ({
         setIsUserScrolling(false);
         // Re-check position and update indicator
         const stillAtBottom = checkIsAtBottom();
+        setIsAtBottom(stillAtBottom);
         setShowScrollToBottom(!stillAtBottom);
       }, autoScrollDelay);
-    } else {
-      // For non-user initiated scrolls, only update indicator if not user scrolling
+    } else if (!isAutoScrollingRef.current) {
+      // Update position state for programmatic scrolls only
+      setIsAtBottom(atBottom);
       if (!isUserScrolling) {
         setShowScrollToBottom(!atBottom);
       }
@@ -120,35 +122,53 @@ export const useAutoScroll = ({
     lastScrollTopRef.current = currentScrollTop;
   }, [checkIsAtBottom, autoScrollDelay, isUserScrolling]);
 
-  // Debounced scroll handler to prevent excessive state updates
+  // Immediate scroll handler for responsive user interaction
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
     
+    // Use immediate handler for user scroll detection
+    const immediateHandleScroll = () => {
+      handleScroll();
+    };
+    
+    // Also use debounced handler for less critical updates
     const debouncedHandleScroll = () => {
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
-      scrollTimeoutRef.current = setTimeout(handleScroll, debounceMs);
+      scrollTimeoutRef.current = setTimeout(() => {
+        // Only update if not actively user scrolling
+        if (!isUserScrolling) {
+          const atBottom = checkIsAtBottom();
+          setIsAtBottom(atBottom);
+          setShowScrollToBottom(!atBottom);
+        }
+      }, debounceMs);
     };
     
-    container.addEventListener('scroll', debouncedHandleScroll, { passive: true });
+    // Use immediate handler for responsive user interaction
+    container.addEventListener('scroll', immediateHandleScroll, { passive: true });
     
     return () => {
-      container.removeEventListener('scroll', debouncedHandleScroll);
+      container.removeEventListener('scroll', immediateHandleScroll);
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, [handleScroll, debounceMs]);
+  }, [handleScroll, debounceMs, isUserScrolling, checkIsAtBottom]);
 
   // Auto-scroll to bottom when new content appears (if user hasn't scrolled up)
   useEffect(() => {
+    // Only auto-scroll if user is not actively scrolling and was at bottom
     if (!isUserScrolling && isAtBottom) {
       // Use double requestAnimationFrame to ensure DOM layout is complete
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          scrollToBottom();
+          // Double-check user hasn't started scrolling in the meantime
+          if (!isUserScrolling) {
+            scrollToBottom();
+          }
         });
       });
     }
