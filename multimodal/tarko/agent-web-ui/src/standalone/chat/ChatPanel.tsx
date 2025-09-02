@@ -90,7 +90,7 @@ export const ChatPanel: React.FC = () => {
     isUserScrolling,
   } = useAutoScroll({
     threshold: 100,
-    debounceMs: 150,
+    debounceMs: 50, // Faster response for better UX
     autoScrollDelay: 2000,
     dependencies: [activeMessages, isProcessing], // Trigger scroll on message changes
   });
