@@ -93,6 +93,7 @@ export const ChatPanel: React.FC = () => {
     debounceMs: 50, // Faster response for better UX
     autoScrollDelay: 2000,
     dependencies: [activeMessages, isProcessing], // Trigger scroll on message changes
+    sessionId: activeSessionId, // Reset state when session changes
   });
 
   // Animation variants

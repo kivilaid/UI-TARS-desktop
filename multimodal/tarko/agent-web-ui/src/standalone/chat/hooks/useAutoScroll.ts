@@ -5,6 +5,7 @@ interface UseAutoScrollOptions {
   debounceMs?: number; // Debounce time for scroll event handling
   autoScrollDelay?: number; // Delay before auto-scrolling after user stops interacting
   dependencies?: any[]; // Dependencies to trigger auto-scroll (e.g., messages)
+  sessionId?: string | null; // Session ID to detect session changes
 }
 
 interface UseAutoScrollReturn {
@@ -17,7 +18,7 @@ interface UseAutoScrollReturn {
 
 /**
  * Custom hook for managing intelligent auto-scroll behavior in chat
- * 
+ *
  * Features:
  * - Auto-scrolls to bottom when new content appears
  * - Detects user manual scrolling and respects it
@@ -29,23 +30,25 @@ export const useAutoScroll = ({
   debounceMs = 100,
   autoScrollDelay = 2000,
   dependencies = [],
+  sessionId = null,
 }: UseAutoScrollOptions = {}): UseAutoScrollReturn => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  
+
   const userInteractionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScrollTopRef = useRef<number>(0);
   const isAutoScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSessionIdRef = useRef<string | null>(sessionId);
 
   // Check if container is at bottom
   const checkIsAtBottom = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container) return false;
-    
+
     const { scrollTop, scrollHeight, clientHeight } = container;
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
     return distanceFromBottom <= threshold;
@@ -55,18 +58,19 @@ export const useAutoScroll = ({
   const scrollToBottom = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container || isUserScrolling) return; // Respect user scrolling
-    
+
     isAutoScrollingRef.current = true;
     container.scrollTo({
       top: container.scrollHeight,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
-    
+
     // Reset auto-scrolling flag after animation completes
     setTimeout(() => {
       isAutoScrollingRef.current = false;
       // Re-check position after scroll animation
-      if (!isUserScrolling) { // Only update if user hasn't started scrolling
+      if (!isUserScrolling) {
+        // Only update if user hasn't started scrolling
         const atBottom = checkIsAtBottom();
         setIsAtBottom(atBottom);
         setShowScrollToBottom(!atBottom);
@@ -78,31 +82,31 @@ export const useAutoScroll = ({
   const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    
+
     const currentScrollTop = container.scrollTop;
     const scrollDelta = Math.abs(currentScrollTop - lastScrollTopRef.current);
-    
+
     // Skip very small movements (< 1px) to avoid noise
     if (scrollDelta < 1) {
       return;
     }
-    
+
     const atBottom = checkIsAtBottom();
-    
+
     // Detect user-initiated scrolling (more sensitive threshold)
     const isUserInitiated = scrollDelta > 3 && !isAutoScrollingRef.current;
-    
+
     if (isUserInitiated) {
       // Immediately stop any auto-scroll behavior
       setIsUserScrolling(true);
       setIsAtBottom(atBottom);
       setShowScrollToBottom(!atBottom);
-      
+
       // Clear existing timeout
       if (userInteractionTimeoutRef.current) {
         clearTimeout(userInteractionTimeoutRef.current);
       }
-      
+
       // Set timeout to resume auto-scroll after inactivity
       userInteractionTimeoutRef.current = setTimeout(() => {
         setIsUserScrolling(false);
@@ -118,7 +122,7 @@ export const useAutoScroll = ({
         setShowScrollToBottom(!atBottom);
       }
     }
-    
+
     lastScrollTopRef.current = currentScrollTop;
   }, [checkIsAtBottom, autoScrollDelay, isUserScrolling]);
 
@@ -126,12 +130,12 @@ export const useAutoScroll = ({
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    
+
     // Use immediate handler for user scroll detection
     const immediateHandleScroll = () => {
       handleScroll();
     };
-    
+
     // Also use debounced handler for less critical updates
     const debouncedHandleScroll = () => {
       if (scrollTimeoutRef.current) {
@@ -146,10 +150,10 @@ export const useAutoScroll = ({
         }
       }, debounceMs);
     };
-    
+
     // Use immediate handler for responsive user interaction
     container.addEventListener('scroll', immediateHandleScroll, { passive: true });
-    
+
     return () => {
       container.removeEventListener('scroll', immediateHandleScroll);
       if (scrollTimeoutRef.current) {
@@ -174,8 +178,49 @@ export const useAutoScroll = ({
     }
   }, [isUserScrolling, isAtBottom, scrollToBottom, ...dependencies]);
 
-  // Initial scroll to bottom when component mounts
+  // Handle session changes - reset state and scroll to bottom
   useEffect(() => {
+  const currentSessionId = sessionId;
+  const previousSessionId = lastSessionIdRef.current;
+  
+  // Detect session change (including initial mount)
+  if (currentSessionId !== previousSessionId) {
+      // Reset all user interaction state
+      setIsUserScrolling(false);
+      setIsAtBottom(true);
+      setShowScrollToBottom(false);
+      
+      // Clear any pending timeouts
+      if (userInteractionTimeoutRef.current) {
+        clearTimeout(userInteractionTimeoutRef.current);
+        userInteractionTimeoutRef.current = null;
+      }
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = null;
+      }
+      
+      // Reset refs
+      lastScrollTopRef.current = 0;
+      isAutoScrollingRef.current = false;
+      
+      // Update session ID ref
+      lastSessionIdRef.current = currentSessionId;
+      
+      // Scroll to bottom after a short delay to ensure DOM is ready
+      if (currentSessionId) {
+        const timer = setTimeout(() => {
+          scrollToBottom();
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [sessionId, scrollToBottom]);
+  
+  // Initial scroll to bottom when component mounts (fallback)
+  useEffect(() => {
+    if (!sessionId) return;
+    
     const timer = setTimeout(() => {
       scrollToBottom();
     }, 100);
