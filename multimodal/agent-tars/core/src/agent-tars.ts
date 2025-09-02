@@ -63,6 +63,15 @@ export class AgentTARS<T extends AgentTARSOptions = AgentTARSOptions> extends MC
       'Please book me the earliest flight from Hangzhou to Shenzhen on 10.1',
     ],
     enableContextualSelector: true,
+    guiAgent: {
+      defaultScreenshotRenderStrategy: 'beforeAction',
+      enableScreenshotRenderStrategySwitch: true,
+      renderGUIAction: true,
+    },
+    layout: {
+      defaultLayout: 'narrow-chat',
+      enableLayoutSwitchButton: true,
+    },
   };
   private workspace: string;
   // FIXME: remove it since options is strict type already

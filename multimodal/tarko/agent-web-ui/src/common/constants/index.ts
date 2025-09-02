@@ -81,13 +81,4 @@ export const CONNECTION_SETTINGS = {
   RECONNECTION_DELAY_MAX: 5000,
 };
 
-/**
- * Agent configuration
- */
-export {
-  getAgentTitle,
-  getWebUIConfig,
-  isContextualSelectorEnabled,
-  getLogoUrl,
-  getWorkspaceNavItems,
-} from './shared';
+

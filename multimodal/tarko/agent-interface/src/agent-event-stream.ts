@@ -364,8 +364,8 @@ export namespace AgentEventStream {
    */
   export interface ScreenshotMetadata extends BaseEnvironmentInputMetadata {
     type: 'screenshot';
-    /** Device pixel ratio for the screenshot */
-    devicePixelRatio?: number;
+    /** URL of the webpage being captured in the screenshot */
+    url?: string;
   }
 
   /**

@@ -10,7 +10,7 @@ import { groupedMessagesAtom, messagesAtom } from '@/common/state/atoms/message'
 import { replayStateAtom } from '@/common/state/atoms/replay';
 import { useReplayMode } from '@/common/hooks/useReplayMode';
 import { useReplay } from '@/common/hooks/useReplay';
-import { getAgentTitle } from '@/common/constants';
+import { getAgentTitle } from '@/config/web-ui-config';
 import { useAutoScroll } from './hooks/useAutoScroll';
 import { ScrollToBottomButton } from './components/ScrollToBottomButton';
 
@@ -321,7 +321,7 @@ export const ChatPanel: React.FC = () => {
               </motion.div>
             ) : (
               // Display messages
-              <div className="space-y-6 pb-2">
+              <div className="space-y-1 pb-2">
                 {activeMessages.map((group, index) => (
                   <AnimatePresence mode="popLayout" key={`group-${index}-${group.messages[0].id}`}>
                     <motion.div
