@@ -69,7 +69,9 @@ export class AgentEventStreamProcessor implements AgentEventStream.Processor {
     ) {
       // Remove only the oldest event to maintain sliding window behavior
       const removedEvent = this.events.shift();
-      this.logger.debug(`Sliding window: removed oldest event ${removedEvent?.type} (${this.events.length} remaining)`);
+      this.logger.debug(
+        `Sliding window: removed oldest event ${removedEvent?.type} (${this.events.length} remaining)`,
+      );
     }
   }
 
