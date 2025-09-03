@@ -61,15 +61,16 @@ export class AgentEventStreamProcessor implements AgentEventStream.Processor {
       }
     });
 
-    // Auto-trim if needed
+    // Auto-trim if needed - use a more conservative approach to prevent race conditions
     if (
       this.options.autoTrim &&
       this.options.maxEvents &&
-      this.events.length > this.options.maxEvents
+      this.events.length > this.options.maxEvents * 1.2 // Only trim when significantly over limit
     ) {
-      const overflow = this.events.length - this.options.maxEvents;
+      const targetSize = this.options.maxEvents;
+      const overflow = this.events.length - targetSize;
       this.events = this.events.slice(overflow);
-      // this.logger.debug(`Auto-trimmed ${overflow} events`);
+      this.logger.debug(`Auto-trimmed ${overflow} events (${this.events.length} remaining)`);
     }
   }
 
@@ -97,6 +98,23 @@ export class AgentEventStreamProcessor implements AgentEventStream.Processor {
    */
   getEventsByType(types: AgentEventStream.EventType[], limit?: number): AgentEventStream.Event[] {
     return this.getEvents(types, limit);
+  }
+
+  /**
+   * Get recent events within a specific time window
+   * This is more reliable than getEvents() for checking recent activity
+   * as it's not affected by auto-trimming of older events
+   */
+  getRecentEvents(timeWindowMs: number = 30000, filter?: AgentEventStream.EventType[]): AgentEventStream.Event[] {
+    const cutoffTime = Date.now() - timeWindowMs;
+    let recentEvents = this.events.filter(event => event.timestamp >= cutoffTime);
+    
+    // Apply type filter if provided
+    if (filter && filter.length > 0) {
+      recentEvents = recentEvents.filter((event) => filter.includes(event.type));
+    }
+    
+    return [...recentEvents]; // Return a copy to prevent mutation
   }
 
   /**

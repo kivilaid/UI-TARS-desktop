@@ -78,9 +78,11 @@ export class GuiAgentPlugin extends AgentPlugin {
   // }
 
   async onEachAgentLoopEnd(): Promise<void> {
-    const events = this.agent.getEventStream().getEvents();
+    // Use getRecentEvents instead of getEvents to avoid race conditions with auto-trimming
+    // Check for tool calls in the last 30 seconds (default window)
+    const recentEvents = this.agent.getEventStream().getRecentEvents(30000, ['tool_call']);
     const lastToolCallIsComputerUse = this.findLastMatch<AgentEventStream.Event>(
-      events,
+      recentEvents,
       (item) => item.type === 'tool_call' && item.name === 'browser_vision_control',
     );
     if (!lastToolCallIsComputerUse) {

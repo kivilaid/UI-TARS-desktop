@@ -640,6 +640,12 @@ export namespace AgentEventStream {
     getEventsByType(types: AgentEventStream.EventType[], limit?: number): AgentEventStream.Event[];
 
     /**
+     * Get recent events within a specific time window
+     * This is more reliable for checking recent activity as it's not affected by auto-trimming
+     */
+    getRecentEvents(timeWindowMs?: number, filter?: AgentEventStream.EventType[]): AgentEventStream.Event[];
+
+    /**
      * Subscribe to new events
      */
     subscribe(callback: (event: AgentEventStream.Event) => void): () => void;
