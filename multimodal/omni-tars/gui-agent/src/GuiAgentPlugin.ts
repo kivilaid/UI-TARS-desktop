@@ -74,52 +74,40 @@ export class GuiAgentPlugin extends AgentPlugin {
     // console.log('onLLMRequest', id, payload);
   }
 
-  // async onEachAgentLoopStart(): Promise<void> {
-  // }
+  private lastProcessedEventCount = 0;
+
+  async onEachAgentLoopStart(): Promise<void> {
+    // Check events at the start of each loop when they're still available
+    const eventStream = this.agent.getEventStream();
+    const events = eventStream.getEvents();
+    
+    this.agent.logger.info('[Omni-TARS] onEachAgentLoopStart - Event count:', events.length);
+    
+    // Only process if we have new events since last check
+    if (events.length > this.lastProcessedEventCount) {
+      const newEvents = events.slice(this.lastProcessedEventCount);
+      this.agent.logger.info('[Omni-TARS] New events since last check:', newEvents.length);
+      
+      // Check if any new events are browser_vision_control tool calls
+      const hasNewBrowserAction = newEvents.some(
+        (event) => event.type === 'tool_call' && event.name === 'browser_vision_control'
+      );
+      
+      if (hasNewBrowserAction) {
+        this.agent.logger.info('[Omni-TARS] New browser action detected, will take screenshot');
+        await this.takeScreenshot(eventStream);
+      }
+      
+      this.lastProcessedEventCount = events.length;
+    }
+  }
 
   async onEachAgentLoopEnd(): Promise<void> {
-    // Debug: Check if 'this' is correctly bound
-    this.agent.logger.info('[Omni-TARS] Plugin instance:', this.constructor.name);
-    this.agent.logger.info('[Omni-TARS] Plugin name:', this.name);
-    this.agent.logger.info('[Omni-TARS] this === GuiAgentPlugin instance?', this instanceof GuiAgentPlugin);
-    
-    const agentEventStream = this.agent.getEventStream();
-    const runnerEventStream = (this.agent as any).runner?.eventStream;
-    
-    this.agent.logger.info('[Omni-TARS] Agent type:', this.agent.constructor.name);
-    this.agent.logger.info('[Omni-TARS] Agent event stream:', agentEventStream.constructor.name);
-    this.agent.logger.info('[Omni-TARS] Agent event stream events:', agentEventStream.getEvents().length);
-    
-    if (runnerEventStream) {
-      this.agent.logger.info('[Omni-TARS] Runner event stream:', runnerEventStream.constructor.name);
-      this.agent.logger.info('[Omni-TARS] Runner event stream events:', runnerEventStream.getEvents().length);
-      this.agent.logger.info('[Omni-TARS] Are they the same instance?', agentEventStream === runnerEventStream);
-    } else {
-      this.agent.logger.info('[Omni-TARS] No runner event stream available');
-    }
-    
-    // Use the event stream that has events
-    const eventStream = (runnerEventStream && runnerEventStream.getEvents().length > 0) 
-      ? runnerEventStream 
-      : agentEventStream;
-    
-    const events = eventStream.getEvents();
-    this.agent.logger.info('[Omni-TARS] Using event stream with', events.length, 'events');
+    // Keep this for debugging purposes, but main logic moved to onEachAgentLoopStart
+    this.agent.logger.info('[Omni-TARS] onEachAgentLoopEnd called - events now cleared');
+  }
 
-    const lastToolCallIsComputerUse = this.findLastMatch<AgentEventStream.Event>(
-      events,
-      (item) => item.type === 'tool_call' && item.name === 'browser_vision_control',
-    );
-    if (!lastToolCallIsComputerUse) {
-      this.agent.logger.info('Last tool not GUI action, skipping screenshot');
-      return;
-    }
-
-    this.agent.logger.info(
-      '[Omni-TARS] onEachAgentLoopEnd lastToolCall',
-      lastToolCallIsComputerUse,
-    );
-
+  private async takeScreenshot(eventStream: any): Promise<void> {
     const operator = await this.operatorManager.getInstance();
     const output = await operator?.screenshot();
     if (!output) {
@@ -152,9 +140,7 @@ export class GuiAgentPlugin extends AgentPlugin {
 
     this.agent.logger.info('[Omni-TARS] Browser Screenshot Captured');
 
-    // Use the same event stream instance that we used for checking events
-    const targetEventStream = (this.agent as any).runner?.eventStream || this.agent.getEventStream();
-    const event = targetEventStream.createEvent('environment_input', {
+    const event = eventStream.createEvent('environment_input', {
       description: 'Browser Screenshot',
       content,
       metadata: {
@@ -162,7 +148,9 @@ export class GuiAgentPlugin extends AgentPlugin {
         url: meta?.url,
       },
     });
-    targetEventStream.sendEvent(event);
+    eventStream.sendEvent(event);
+    this.agent.logger.info('[Omni-TARS] Screenshot event sent');
+    
     // Extract image dimensions from screenshot
     const dimensions = base64Tool.getDimensions();
     if (dimensions) {
