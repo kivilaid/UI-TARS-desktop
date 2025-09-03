@@ -107,6 +107,7 @@ export class AgentComposer {
   async executeOnEachAgentLoopEnd(): Promise<void> {
     for (const plugin of this.plugins) {
       if (plugin.onEachAgentLoopEnd) {
+        this.logger.info(`Executing onEachAgentLoopEnd for plugin: ${plugin.name}`);
         await plugin.onEachAgentLoopEnd();
       }
     }

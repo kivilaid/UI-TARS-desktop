@@ -78,6 +78,11 @@ export class GuiAgentPlugin extends AgentPlugin {
   // }
 
   async onEachAgentLoopEnd(): Promise<void> {
+    // Debug: Check if 'this' is correctly bound
+    this.agent.logger.info('[Omni-TARS] Plugin instance:', this.constructor.name);
+    this.agent.logger.info('[Omni-TARS] Plugin name:', this.name);
+    this.agent.logger.info('[Omni-TARS] this === GuiAgentPlugin instance?', this instanceof GuiAgentPlugin);
+    
     const agentEventStream = this.agent.getEventStream();
     const runnerEventStream = (this.agent as any).runner?.eventStream;
     
