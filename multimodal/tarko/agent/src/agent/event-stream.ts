@@ -100,23 +100,6 @@ export class AgentEventStreamProcessor implements AgentEventStream.Processor {
   }
 
   /**
-   * Get recent events within a specific time window
-   * This is more reliable than getEvents() for checking recent activity
-   * as it's not affected by auto-trimming of older events
-   */
-  getRecentEvents(timeWindowMs: number = 30000, filter?: AgentEventStream.EventType[]): AgentEventStream.Event[] {
-    const cutoffTime = Date.now() - timeWindowMs;
-    let recentEvents = this.events.filter(event => event.timestamp >= cutoffTime);
-    
-    // Apply type filter if provided
-    if (filter && filter.length > 0) {
-      recentEvents = recentEvents.filter((event) => filter.includes(event.type));
-    }
-    
-    return [...recentEvents]; // Return a copy to prevent mutation
-  }
-
-  /**
    * Get tool results since the last assistant message
    */
   getLatestToolResults(): { toolCallId: string; toolName: string; content: any }[] {
