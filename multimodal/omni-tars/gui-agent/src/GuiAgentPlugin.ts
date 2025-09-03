@@ -78,10 +78,28 @@ export class GuiAgentPlugin extends AgentPlugin {
   // }
 
   async onEachAgentLoopEnd(): Promise<void> {
-    // Get event stream from agent runner to ensure we're accessing the correct instance
-    const eventStream = (this.agent as any).runner?.eventStream || this.agent.getEventStream();
+    const agentEventStream = this.agent.getEventStream();
+    const runnerEventStream = (this.agent as any).runner?.eventStream;
+    
+    this.agent.logger.info('[Omni-TARS] Agent type:', this.agent.constructor.name);
+    this.agent.logger.info('[Omni-TARS] Agent event stream:', agentEventStream.constructor.name);
+    this.agent.logger.info('[Omni-TARS] Agent event stream events:', agentEventStream.getEvents().length);
+    
+    if (runnerEventStream) {
+      this.agent.logger.info('[Omni-TARS] Runner event stream:', runnerEventStream.constructor.name);
+      this.agent.logger.info('[Omni-TARS] Runner event stream events:', runnerEventStream.getEvents().length);
+      this.agent.logger.info('[Omni-TARS] Are they the same instance?', agentEventStream === runnerEventStream);
+    } else {
+      this.agent.logger.info('[Omni-TARS] No runner event stream available');
+    }
+    
+    // Use the event stream that has events
+    const eventStream = (runnerEventStream && runnerEventStream.getEvents().length > 0) 
+      ? runnerEventStream 
+      : agentEventStream;
+    
     const events = eventStream.getEvents();
-    this.agent.logger.info('[Omni-TARS] Event Stream Length', events.length);
+    this.agent.logger.info('[Omni-TARS] Using event stream with', events.length, 'events');
 
     const lastToolCallIsComputerUse = this.findLastMatch<AgentEventStream.Event>(
       events,
