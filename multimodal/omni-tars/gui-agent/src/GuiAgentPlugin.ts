@@ -77,34 +77,34 @@ export class GuiAgentPlugin extends AgentPlugin {
   private lastProcessedEventCount = 0;
 
   async onEachAgentLoopStart(): Promise<void> {
-    // Check events at the start of each loop when they're still available
+    // This method is kept for potential future use
+    this.agent.logger.info('[Omni-TARS] onEachAgentLoopStart called');
+  }
+
+  async onEachAgentLoopEnd(): Promise<void> {
+    // Check events at the end of each loop - now fixed to work properly with AgentSnapshot
     const eventStream = this.agent.getEventStream();
     const events = eventStream.getEvents();
-    
-    this.agent.logger.info('[Omni-TARS] onEachAgentLoopStart - Event count:', events.length);
-    
+
+    this.agent.logger.info('[Omni-TARS] onEachAgentLoopEnd - Event count:', events.length);
+
     // Only process if we have new events since last check
     if (events.length > this.lastProcessedEventCount) {
       const newEvents = events.slice(this.lastProcessedEventCount);
       this.agent.logger.info('[Omni-TARS] New events since last check:', newEvents.length);
-      
+
       // Check if any new events are browser_vision_control tool calls
       const hasNewBrowserAction = newEvents.some(
-        (event) => event.type === 'tool_call' && event.name === 'browser_vision_control'
+        (event) => event.type === 'tool_call' && event.name === 'browser_vision_control',
       );
-      
+
       if (hasNewBrowserAction) {
         this.agent.logger.info('[Omni-TARS] New browser action detected, will take screenshot');
         await this.takeScreenshot(eventStream);
       }
-      
+
       this.lastProcessedEventCount = events.length;
     }
-  }
-
-  async onEachAgentLoopEnd(): Promise<void> {
-    // Keep this for debugging purposes, but main logic moved to onEachAgentLoopStart
-    this.agent.logger.info('[Omni-TARS] onEachAgentLoopEnd called - events now cleared');
   }
 
   private async takeScreenshot(eventStream: any): Promise<void> {
@@ -150,7 +150,7 @@ export class GuiAgentPlugin extends AgentPlugin {
     });
     eventStream.sendEvent(event);
     this.agent.logger.info('[Omni-TARS] Screenshot event sent');
-    
+
     // Extract image dimensions from screenshot
     const dimensions = base64Tool.getDimensions();
     if (dimensions) {
