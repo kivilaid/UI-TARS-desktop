@@ -35,6 +35,36 @@ import { cn } from '@renderer/utils';
 import { PresetImport, PresetBanner } from './preset';
 import { api } from '@/renderer/src/api';
 
+// Check if we're in replay mode by detecting URL parameters or global state
+const isReplayMode = (): boolean => {
+  // Check URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  if (
+    urlParams.get('mode') === 'replay' ||
+    urlParams.get('replay') === 'true'
+  ) {
+    return true;
+  }
+
+  // Check if we're in a replay context (e.g., viewing shared content)
+  if (
+    window.location.hash.includes('replay') ||
+    window.location.href.includes('replay')
+  ) {
+    return true;
+  }
+
+  // Check for replay indicators in the document
+  if (
+    document.querySelector('[data-replay-mode]') ||
+    document.body.classList.contains('replay-mode')
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
 const formSchema = z.object({
   vlmProvider: z.nativeEnum(VLMProviderV2, {
     message: 'Please select a VLM Provider to enhance resolution',
@@ -108,6 +138,10 @@ export function VLMSettings({
       return;
     }
     if (isRemoteAutoUpdatedPreset) {
+      return;
+    }
+    // Skip auto-save in replay mode to prevent API calls
+    if (isReplayMode()) {
       return;
     }
 
@@ -202,12 +236,18 @@ export function VLMSettings({
   };
 
   const handleResponseApiChange = async (checked: boolean) => {
+    // Skip API calls in replay mode
+    if (isReplayMode()) {
+      form.setValue('useResponsesApi', checked);
+      return;
+    }
+
     if (checked) {
       if (responseApiSupported === null) {
         setIsCheckingResponseApi(true);
         const modelConfig = {
           baseUrl: newBaseUrl,
-          apiKey: newApiKey,
+          apiKey: newApiKey, // secretlint-disable-line
           modelName: newModelName,
         };
 
@@ -392,7 +432,7 @@ export function VLMSettings({
           <ModelAvailabilityCheck
             modelConfig={{
               baseUrl: newBaseUrl,
-              apiKey: newApiKey,
+              apiKey: newApiKey, // secretlint-disable-line
               modelName: newModelName,
             }}
             onResponseApiSupportChange={setResponseApiSupported}
@@ -443,7 +483,7 @@ export function VLMSettings({
 interface ModelAvailabilityCheckProps {
   modelConfig: {
     baseUrl: string;
-    apiKey: string;
+    apiKey: string; // secretlint-disable-line
     modelName: string;
   };
   disabled?: boolean;
@@ -467,7 +507,7 @@ export function ModelAvailabilityCheck({
 }: ModelAvailabilityCheckProps) {
   const [checkState, setCheckState] = useState<CheckState>({ status: 'idle' });
 
-  const { baseUrl, apiKey, modelName } = modelConfig;
+  const { baseUrl, apiKey, modelName } = modelConfig; // secretlint-disable-line
   const isConfigValid = baseUrl && apiKey && modelName;
 
   useEffect(() => {
@@ -490,6 +530,12 @@ export function ModelAvailabilityCheck({
   const handleCheckModel = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Skip API calls in replay mode
+    if (isReplayMode()) {
+      toast.info('Model checking is disabled in replay mode');
+      return;
+    }
 
     if (!isConfigValid) {
       toast.error(
