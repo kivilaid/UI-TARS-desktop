@@ -81,11 +81,7 @@ export class GuiAgentPlugin extends AgentPlugin {
     // Get event stream from agent runner to ensure we're accessing the correct instance
     const eventStream = (this.agent as any).runner?.eventStream || this.agent.getEventStream();
     const events = eventStream.getEvents();
-    console.log('events', events);
     this.agent.logger.info('[Omni-TARS] Event Stream Length', events.length);
-    this.agent.logger.info('[Omni-TARS] Event Stream Instance ID', (eventStream as any).constructor.name);
-    this.agent.logger.info('[Omni-TARS] Agent Instance Type', this.agent.constructor.name);
-    this.agent.logger.info('[Omni-TARS] Using Runner Event Stream:', !!((this.agent as any).runner?.eventStream));
 
     const lastToolCallIsComputerUse = this.findLastMatch<AgentEventStream.Event>(
       events,
@@ -144,7 +140,6 @@ export class GuiAgentPlugin extends AgentPlugin {
       },
     });
     targetEventStream.sendEvent(event);
-    this.agent.logger.info('[Omni-TARS] Screenshot event sent to event stream, total events now:', targetEventStream.getEvents().length);
     // Extract image dimensions from screenshot
     const dimensions = base64Tool.getDimensions();
     if (dimensions) {

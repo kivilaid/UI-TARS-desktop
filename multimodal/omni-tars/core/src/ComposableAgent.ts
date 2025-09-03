@@ -44,9 +44,6 @@ export class ComposableAgent extends Agent {
       'load plugins success: ',
       plugins.map((p) => p.name),
     );
-    
-    // Debug: Log event stream instance
-    this.logger.info('[ComposableAgent] Event Stream Instance:', this.getEventStream().constructor.name);
   }
 
   async initialize(): Promise<void> {
@@ -77,11 +74,6 @@ export class ComposableAgent extends Agent {
   }
 
   async onEachAgentLoopEnd(): Promise<void> {
-    // Debug: Log event stream info before plugin execution
-    const eventStream = this.getEventStream();
-    this.logger.info('[ComposableAgent] onEachAgentLoopEnd - Event Stream Length:', eventStream.getEvents().length);
-    this.logger.info('[ComposableAgent] onEachAgentLoopEnd - Event Stream Instance:', eventStream.constructor.name);
-    
     // Execute hooks for all plugins
     await this.composer.executeOnEachAgentLoopEnd();
   }
