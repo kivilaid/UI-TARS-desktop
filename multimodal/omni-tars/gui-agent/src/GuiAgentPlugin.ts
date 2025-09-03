@@ -86,9 +86,8 @@ export class GuiAgentPlugin extends AgentPlugin {
     toolCall: { toolCallId: string; name: string },
     result: unknown,
   ): Promise<void> {
-    this.agent.logger.info('onAfterToolCall toolCall', JSON.stringify(toolCall));
     if (toolCall.name !== 'browser_vision_control') {
-      this.agent.logger.info('onAfterToolCall: skipping screenshot');
+      this.agent.logger.info('[GuiAgentPlugin] onAfterToolCall not gui tool, skipping screenshot');
       return;
     }
 
@@ -105,11 +104,17 @@ export class GuiAgentPlugin extends AgentPlugin {
       return;
     }
 
-    this.agent.logger.info('onAfterToolCall base64Uri', base64Uri);
+    this.agent.logger.info(
+      '[GuiAgentPlugin] onAfterToolCall screenshot base64Uri',
+      base64Uri.length > 20 ? base64Uri.substring(0, 20) + '...' : base64Uri,
+    );
 
     const meta = operator instanceof BrowserOperator ? await operator.getMeta() : null;
 
-    this.agent.logger.info('onAfterToolCall meta', JSON.stringify(meta));
+    this.agent.logger.info(
+      '[GuiAgentPlugin] onAfterToolCall screenshot meta',
+      JSON.stringify(meta),
+    );
 
     const content: ChatCompletionContentPart[] = [
       {
@@ -130,7 +135,7 @@ export class GuiAgentPlugin extends AgentPlugin {
     const eventStream = this.agent.getEventStream();
 
     const events = eventStream.getEvents();
-    this.agent.logger.info('onAfterToolCall events:', events.length);
+    this.agent.logger.info('[GuiAgentPlugin] onAfterToolCall events len:', events.length);
 
     const event = eventStream.createEvent('environment_input', {
       description: 'Browser Screenshot',
