@@ -61,16 +61,15 @@ export class AgentEventStreamProcessor implements AgentEventStream.Processor {
       }
     });
 
-    // Auto-trim if needed - use a more conservative approach to prevent race conditions
+    // True sliding window - only remove the oldest event when over limit
     if (
       this.options.autoTrim &&
       this.options.maxEvents &&
-      this.events.length > this.options.maxEvents * 1.2 // Only trim when significantly over limit
+      this.events.length > this.options.maxEvents
     ) {
-      const targetSize = this.options.maxEvents;
-      const overflow = this.events.length - targetSize;
-      this.events = this.events.slice(overflow);
-      this.logger.debug(`Auto-trimmed ${overflow} events (${this.events.length} remaining)`);
+      // Remove only the oldest event to maintain sliding window behavior
+      const removedEvent = this.events.shift();
+      this.logger.debug(`Sliding window: removed oldest event ${removedEvent?.type} (${this.events.length} remaining)`);
     }
   }
 
