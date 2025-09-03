@@ -78,9 +78,12 @@ export class GuiAgentPlugin extends AgentPlugin {
   // }
 
   async onEachAgentLoopEnd(): Promise<void> {
-    const events = this.agent.getEventStream().getEvents();
+    const eventStream = this.agent.getEventStream();
+    const events = eventStream.getEvents();
     console.log('events', events);
     this.agent.logger.info('[Omni-TARS] Event Stream Length', events.length);
+    this.agent.logger.info('[Omni-TARS] Event Stream Instance ID', (eventStream as any).constructor.name);
+    this.agent.logger.info('[Omni-TARS] Agent Instance Type', this.agent.constructor.name);
 
     const lastToolCallIsComputerUse = this.findLastMatch<AgentEventStream.Event>(
       events,
