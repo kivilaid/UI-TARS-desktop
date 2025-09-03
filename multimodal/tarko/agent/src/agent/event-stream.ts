@@ -50,7 +50,7 @@ export class AgentEventStreamProcessor implements AgentEventStream.Processor {
    */
   sendEvent(event: AgentEventStream.Event): void {
     this.events.push(event);
-    // this.logger.debug(`Event added: ${event.type} (${event.id})`);
+    this.logger.debug(`Event added: ${event.type} (${event.id}), total events: ${this.events.length}`);
 
     // Notify subscribers
     this.subscribers.forEach((callback) => {
@@ -79,18 +79,22 @@ export class AgentEventStreamProcessor implements AgentEventStream.Processor {
    * Get all events in the stream
    */
   getEvents(filter?: AgentEventStream.EventType[], limit?: number): AgentEventStream.Event[] {
+    this.logger.debug(`getEvents called: total events=${this.events.length}, filter=${filter}, limit=${limit}`);
     let events = this.events;
 
     // Apply type filter if provided
     if (filter && filter.length > 0) {
       events = events.filter((event) => filter.includes(event.type));
+      this.logger.debug(`After filter: ${events.length} events`);
     }
 
     // Apply limit if provided
     if (limit && limit > 0 && events.length > limit) {
       events = events.slice(events.length - limit);
+      this.logger.debug(`After limit: ${events.length} events`);
     }
 
+    this.logger.debug(`getEvents returning ${events.length} events`);
     return [...events]; // Return a copy to prevent mutation
   }
 
@@ -210,8 +214,9 @@ export class AgentEventStreamProcessor implements AgentEventStream.Processor {
    * Clear all events from the stream
    */
   dispose(): void {
+    const eventCount = this.events.length;
     this.events = [];
     this.subscribers = [];
-    this.logger.debug('Event stream cleared');
+    this.logger.warn(`Event stream cleared - removed ${eventCount} events`);
   }
 }
