@@ -79,6 +79,7 @@ export class GuiAgentPlugin extends AgentPlugin {
 
   async onEachAgentLoopEnd(): Promise<void> {
     const events = this.agent.getEventStream().getEvents();
+    console.log('events', events);
     const lastToolCallIsComputerUse = this.findLastMatch<AgentEventStream.Event>(
       events,
       (item) => item.type === 'tool_call' && item.name === 'browser_vision_control',
@@ -119,6 +120,8 @@ export class GuiAgentPlugin extends AgentPlugin {
         text: `The current page's url: ${meta?.url}`,
       });
     }
+
+    console.log('[Omni-TARS] Browser Screenshot Captured');
 
     const eventStream = this.agent.getEventStream();
     const event = eventStream.createEvent('environment_input', {
