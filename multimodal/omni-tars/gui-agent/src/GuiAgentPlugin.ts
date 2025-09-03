@@ -80,6 +80,8 @@ export class GuiAgentPlugin extends AgentPlugin {
   async onEachAgentLoopEnd(): Promise<void> {
     const events = this.agent.getEventStream().getEvents();
     console.log('events', events);
+    this.agent.logger.info('[Omni-TARS] Event Stream Length', events.length);
+
     const lastToolCallIsComputerUse = this.findLastMatch<AgentEventStream.Event>(
       events,
       (item) => item.type === 'tool_call' && item.name === 'browser_vision_control',
@@ -89,7 +91,10 @@ export class GuiAgentPlugin extends AgentPlugin {
       return;
     }
 
-    this.agent.logger.info('onEachAgentLoopEnd lastToolCall', lastToolCallIsComputerUse);
+    this.agent.logger.info(
+      '[Omni-TARS] onEachAgentLoopEnd lastToolCall',
+      lastToolCallIsComputerUse,
+    );
 
     const operator = await this.operatorManager.getInstance();
     const output = await operator?.screenshot();
@@ -121,7 +126,7 @@ export class GuiAgentPlugin extends AgentPlugin {
       });
     }
 
-    console.log('[Omni-TARS] Browser Screenshot Captured');
+    this.agent.logger.info('[Omni-TARS] Browser Screenshot Captured');
 
     const eventStream = this.agent.getEventStream();
     const event = eventStream.createEvent('environment_input', {
