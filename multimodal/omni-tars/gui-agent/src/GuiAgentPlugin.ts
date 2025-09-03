@@ -9,6 +9,7 @@ import {
   LLMResponseHookPayload,
   AgentEventStream,
   ChatCompletionContentPart,
+  EachAgentLoopEndContext,
 } from '@tarko/agent';
 import {
   GUIExecuteResult,
@@ -81,12 +82,18 @@ export class GuiAgentPlugin extends AgentPlugin {
     this.agent.logger.info('[Omni-TARS] onEachAgentLoopStart called');
   }
 
-  async onEachAgentLoopEnd(): Promise<void> {
+  async onEachAgentLoopEnd(context: EachAgentLoopEndContext): Promise<void> {
     // Check events at the end of each loop - now fixed to work properly with AgentSnapshot
     const eventStream = this.agent.getEventStream();
     const events = eventStream.getEvents();
 
-    this.agent.logger.info('[Omni-TARS] onEachAgentLoopEnd - Event count:', events.length);
+    this.agent.logger.info(
+      `[Omni-TARS] onEachAgentLoopEnd - Iteration: ${context.iteration}, Event count: ${events.length}`,
+    );
+
+    if (events.length === 0) {
+      console.trace();
+    }
 
     // Only process if we have new events since last check
     if (events.length > this.lastProcessedEventCount) {
