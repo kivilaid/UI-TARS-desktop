@@ -76,6 +76,7 @@ export class GuiAgentPlugin extends AgentPlugin {
   }
 
   private lastProcessedEventCount = 0;
+  private cachedEvents: any[] = []; // Cache events to avoid race condition issues
 
   async onEachAgentLoopStart(): Promise<void> {
     // This method is kept for potential future use
@@ -91,13 +92,27 @@ export class GuiAgentPlugin extends AgentPlugin {
       `[Omni-TARS] onEachAgentLoopEnd - Iteration: ${context.iteration}, Event count: ${events.length}`,
     );
 
-    if (events.length === 0) {
-      console.trace();
+    // Update cached events - merge with current events to handle race conditions
+    if (events.length > 0) {
+      // If we have events, update our cache
+      this.cachedEvents = [...events];
+      this.agent.logger.info(`[Omni-TARS] Updated cached events: ${this.cachedEvents.length}`);
+    } else if (this.cachedEvents.length > 0) {
+      // If current events are empty but we have cached events, use cached
+      this.agent.logger.warn(`[Omni-TARS] Event stream is empty, using cached events: ${this.cachedEvents.length}`);
+      console.trace('Event stream empty, using cache');
+    } else {
+      // Both current and cached are empty
+      this.agent.logger.warn('[Omni-TARS] Both current and cached events are empty');
+      console.trace('No events available');
+      return;
     }
 
+    const eventsToProcess = events.length > 0 ? events : this.cachedEvents;
+
     // Only process if we have new events since last check
-    if (events.length > this.lastProcessedEventCount) {
-      const newEvents = events.slice(this.lastProcessedEventCount);
+    if (eventsToProcess.length > this.lastProcessedEventCount) {
+      const newEvents = eventsToProcess.slice(this.lastProcessedEventCount);
       this.agent.logger.info('[Omni-TARS] New events since last check:', newEvents.length);
 
       // Check if any new events are browser_vision_control tool calls
@@ -110,7 +125,7 @@ export class GuiAgentPlugin extends AgentPlugin {
         await this.takeScreenshot(eventStream);
       }
 
-      this.lastProcessedEventCount = events.length;
+      this.lastProcessedEventCount = eventsToProcess.length;
     }
   }
 

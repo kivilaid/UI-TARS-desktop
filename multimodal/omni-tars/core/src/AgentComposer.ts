@@ -113,7 +113,11 @@ export class AgentComposer {
     for (const plugin of this.plugins) {
       if (plugin.onEachAgentLoopEnd) {
         this.logger.info(`Executing onEachAgentLoopEnd for plugin: ${plugin.name}`);
+        const eventCount = plugin.agent?.getEventStream().getEvents().length;
+        this.logger.info(`Events before ${plugin.name}: ${eventCount}`);
         await plugin.onEachAgentLoopEnd(context);
+        const eventCountAfter = plugin.agent?.getEventStream().getEvents().length;
+        this.logger.info(`Events after ${plugin.name}: ${eventCountAfter}`);
       }
     }
   }
