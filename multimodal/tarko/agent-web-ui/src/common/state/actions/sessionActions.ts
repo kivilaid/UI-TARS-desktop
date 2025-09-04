@@ -354,26 +354,11 @@ export const sendMessageAction = atom(
       },
     }));
 
-    // Add user message immediately to UI for better UX
-    // The server's user_message event will be ignored by the handler to prevent double rendering
-    const tempUserMessage: Message = {
-      id: uuidv4(),
-      role: 'user',
-      content,
-      timestamp: Date.now(),
-      isTemporary: true, // Mark as temporary, will be updated by server event
-    };
-
-    set(messagesAtom, (prev) => ({
-      ...prev,
-      [activeSessionId]: [...(prev[activeSessionId] || []), tempUserMessage],
-    }));
-
     // Set initial session name from first user query
     // Note: We check message count before sending since user_message will come from stream
     try {
       const messages = get(messagesAtom)[activeSessionId] || [];
-      const userMessageCount = messages.filter((m) => m.role === 'user' && !m.isTemporary).length;
+      const userMessageCount = messages.filter((m) => m.role === 'user').length;
 
       if (userMessageCount === 0) {
         let summary = '';

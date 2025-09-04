@@ -24,37 +24,6 @@ export class UserMessageHandler implements EventHandler<AgentEventStream.UserMes
   ): void {
     const { get, set } = context;
 
-    // Skip processing server user_message events since we already add them on client side
-    // This prevents double rendering while maintaining server event compatibility
-    const sessionMessages = get(messagesAtom)[sessionId] || [];
-    const hasMatchingTempMessage = sessionMessages.some((msg) => {
-      if (msg.role !== 'user' || !msg.isTemporary) return false;
-      return JSON.stringify(msg.content) === JSON.stringify(event.content);
-    });
-
-    if (hasMatchingTempMessage) {
-      // We already have this message as temporary, just mark it as non-temporary
-      set(messagesAtom, (prev: Record<string, Message[]>) => {
-        const currentMessages = prev[sessionId] || [];
-        const updatedMessages = currentMessages.map((msg) => {
-          if (
-            msg.role === 'user' &&
-            msg.isTemporary &&
-            JSON.stringify(msg.content) === JSON.stringify(event.content)
-          ) {
-            return { ...msg, isTemporary: false };
-          }
-          return msg;
-        });
-        return {
-          ...prev,
-          [sessionId]: updatedMessages,
-        };
-      });
-      return;
-    }
-
-    // Fallback: no temporary message found, add the server message
     const userMessage: Message = {
       id: event.id,
       role: 'user',
@@ -62,10 +31,12 @@ export class UserMessageHandler implements EventHandler<AgentEventStream.UserMes
       timestamp: event.timestamp,
     };
 
-    set(messagesAtom, (prev: Record<string, Message[]>) => ({
-      ...prev,
-      [sessionId]: [...(prev[sessionId] || []), userMessage],
-    }));
+    set(messagesAtom, (prev: Record<string, Message[]>) => {
+      return {
+        ...prev,
+        [sessionId]: [...(prev[sessionId] || []), userMessage],
+      };
+    });
 
     // Auto-show user uploaded images in workspace panel (only for active session)
     if (Array.isArray(event.content) && shouldUpdatePanelContent(get, sessionId)) {
