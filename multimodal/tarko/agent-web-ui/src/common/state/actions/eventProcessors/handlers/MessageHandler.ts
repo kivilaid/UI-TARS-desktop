@@ -34,14 +34,30 @@ export class UserMessageHandler implements EventHandler<AgentEventStream.UserMes
     set(messagesAtom, (prev: Record<string, Message[]>) => {
       const sessionMessages = prev[sessionId] || [];
 
-      // Remove any temporary user messages to prevent duplicates
-      const filteredMessages = sessionMessages.filter(
-        (msg) => !(msg.role === 'user' && msg.isTemporary),
-      );
+      // Find the most recent temporary user message with matching content to replace
+      const lastTempUserIndex = sessionMessages
+        .map((msg, index) => ({ msg, index }))
+        .reverse()
+        .find(({ msg }) => {
+          if (msg.role !== 'user' || !msg.isTemporary) return false;
+          // Compare content to ensure we're replacing the right message
+          return JSON.stringify(msg.content) === JSON.stringify(event.content);
+        })?.index;
 
+      if (lastTempUserIndex !== undefined) {
+        // Replace the temporary message with the real one (no array length change)
+        const updatedMessages = [...sessionMessages];
+        updatedMessages[lastTempUserIndex] = userMessage;
+        return {
+          ...prev,
+          [sessionId]: updatedMessages,
+        };
+      }
+
+      // Fallback: no temporary message found, just append
       return {
         ...prev,
-        [sessionId]: [...filteredMessages, userMessage],
+        [sessionId]: [...sessionMessages, userMessage],
       };
     });
 
