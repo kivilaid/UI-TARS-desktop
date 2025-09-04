@@ -46,8 +46,13 @@ export class UserMessageHandler implements EventHandler<AgentEventStream.UserMes
 
       if (lastTempUserIndex !== undefined) {
         // Replace the temporary message with the real one (no array length change)
+        // Keep the same ID to prevent React re-rendering
+        const tempMessage = sessionMessages[lastTempUserIndex];
         const updatedMessages = [...sessionMessages];
-        updatedMessages[lastTempUserIndex] = userMessage;
+        updatedMessages[lastTempUserIndex] = {
+          ...userMessage,
+          id: tempMessage.id, // Keep the original temp ID to maintain React key consistency
+        };
         return {
           ...prev,
           [sessionId]: updatedMessages,
