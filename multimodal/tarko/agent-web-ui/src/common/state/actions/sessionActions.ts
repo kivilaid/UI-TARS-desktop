@@ -355,13 +355,13 @@ export const sendMessageAction = atom(
     }));
 
     // Add user message immediately to UI for better UX
-    // The server's user_message event will be deduplicated in the handler
+    // The server's user_message event will be ignored by the handler to prevent double rendering
     const tempUserMessage: Message = {
       id: uuidv4(),
       role: 'user',
       content,
       timestamp: Date.now(),
-      isTemporary: true, // Mark as temporary for deduplication
+      isTemporary: true, // Mark as temporary, will be updated by server event
     };
 
     set(messagesAtom, (prev) => ({

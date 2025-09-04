@@ -24,6 +24,37 @@ export class UserMessageHandler implements EventHandler<AgentEventStream.UserMes
   ): void {
     const { get, set } = context;
 
+    // Skip processing server user_message events since we already add them on client side
+    // This prevents double rendering while maintaining server event compatibility
+    const sessionMessages = get(messagesAtom)[sessionId] || [];
+    const hasMatchingTempMessage = sessionMessages.some((msg) => {
+      if (msg.role !== 'user' || !msg.isTemporary) return false;
+      return JSON.stringify(msg.content) === JSON.stringify(event.content);
+    });
+
+    if (hasMatchingTempMessage) {
+      // We already have this message as temporary, just mark it as non-temporary
+      set(messagesAtom, (prev: Record<string, Message[]>) => {
+        const currentMessages = prev[sessionId] || [];
+        const updatedMessages = currentMessages.map((msg) => {
+          if (
+            msg.role === 'user' &&
+            msg.isTemporary &&
+            JSON.stringify(msg.content) === JSON.stringify(event.content)
+          ) {
+            return { ...msg, isTemporary: false };
+          }
+          return msg;
+        });
+        return {
+          ...prev,
+          [sessionId]: updatedMessages,
+        };
+      });
+      return;
+    }
+
+    // Fallback: no temporary message found, add the server message
     const userMessage: Message = {
       id: event.id,
       role: 'user',
@@ -31,40 +62,10 @@ export class UserMessageHandler implements EventHandler<AgentEventStream.UserMes
       timestamp: event.timestamp,
     };
 
-    set(messagesAtom, (prev: Record<string, Message[]>) => {
-      const sessionMessages = prev[sessionId] || [];
-
-      // Find the most recent temporary user message with matching content to replace
-      const lastTempUserIndex = sessionMessages
-        .map((msg, index) => ({ msg, index }))
-        .reverse()
-        .find(({ msg }) => {
-          if (msg.role !== 'user' || !msg.isTemporary) return false;
-          // Compare content to ensure we're replacing the right message
-          return JSON.stringify(msg.content) === JSON.stringify(event.content);
-        })?.index;
-
-      if (lastTempUserIndex !== undefined) {
-        // Replace the temporary message with the real one (no array length change)
-        // Keep the same ID to prevent React re-rendering
-        const tempMessage = sessionMessages[lastTempUserIndex];
-        const updatedMessages = [...sessionMessages];
-        updatedMessages[lastTempUserIndex] = {
-          ...userMessage,
-          id: tempMessage.id, // Keep the original temp ID to maintain React key consistency
-        };
-        return {
-          ...prev,
-          [sessionId]: updatedMessages,
-        };
-      }
-
-      // Fallback: no temporary message found, just append
-      return {
-        ...prev,
-        [sessionId]: [...sessionMessages, userMessage],
-      };
-    });
+    set(messagesAtom, (prev: Record<string, Message[]>) => ({
+      ...prev,
+      [sessionId]: [...(prev[sessionId] || []), userMessage],
+    }));
 
     // Auto-show user uploaded images in workspace panel (only for active session)
     if (Array.isArray(event.content) && shouldUpdatePanelContent(get, sessionId)) {
