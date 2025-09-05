@@ -45,7 +45,7 @@ export const ChatPanel: React.FC = () => {
       threshold: 100,
       debounceMs: 150,
       autoScrollDelay: 2000,
-      dependencies: [activeMessages, isProcessing],
+      dependencies: [activeMessages.length, isProcessing, replayState.currentEventIndex],
     });
 
   // Find research report in session
@@ -128,7 +128,11 @@ export const ChatPanel: React.FC = () => {
       </div>
 
       <div className="p-4 relative">
-        <ScrollToBottomButton show={showScrollToBottom} onClick={scrollToBottom} />
+        <ScrollToBottomButton 
+          show={showScrollToBottom} 
+          onClick={scrollToBottom} 
+          containerRef={messagesContainerRef}
+        />
         {researchReport && !isProcessing && (
           <div className="mb-4">
             <ResearchReportEntry

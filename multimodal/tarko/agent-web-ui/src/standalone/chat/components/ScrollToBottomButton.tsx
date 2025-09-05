@@ -5,6 +5,7 @@ import { FiChevronDown } from 'react-icons/fi';
 interface ScrollToBottomButtonProps {
   show: boolean;
   onClick: () => void;
+  containerRef?: React.RefObject<HTMLDivElement>;
 }
 
 /**
@@ -15,8 +16,22 @@ interface ScrollToBottomButtonProps {
  * - Gradient background for visibility
  * - Hover and tap animations
  * - Positioned above the input area
+ * - Smooth scroll when clicked manually
  */
-export const ScrollToBottomButton: React.FC<ScrollToBottomButtonProps> = ({ show, onClick }) => {
+export const ScrollToBottomButton: React.FC<ScrollToBottomButtonProps> = ({ show, onClick, containerRef }) => {
+  const handleClick = () => {
+    // If containerRef is provided, use smooth scroll for manual clicks
+    if (containerRef?.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    } else {
+      // Fallback to the provided onClick
+      onClick();
+    }
+  };
+
   return (
     <AnimatePresence>
       {show && (
@@ -33,7 +48,7 @@ export const ScrollToBottomButton: React.FC<ScrollToBottomButtonProps> = ({ show
           <motion.button
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
-            onClick={onClick}
+            onClick={handleClick}
             className="relative flex items-center justify-center w-10 h-10 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full shadow-lg border border-gray-200/50 dark:border-gray-600/50 transition-colors group"
             aria-label="Scroll to bottom"
           >
