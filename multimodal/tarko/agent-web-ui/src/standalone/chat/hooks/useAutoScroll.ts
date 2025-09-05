@@ -40,9 +40,15 @@ export const useAutoScroll = ({
     const { scrollTop, scrollHeight, clientHeight } = container;
     const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
     
-    // Only mark as user-scrolled if they scrolled up from bottom
-    if (!isAtBottom && scrollHeight === lastScrollHeightRef.current) {
-      userScrolledUpRef.current = true;
+    // If user scrolled to bottom, resume auto-scroll
+    if (isAtBottom) {
+      userScrolledUpRef.current = false;
+    } else {
+      // Only mark as user-scrolled if content height hasn't changed
+      // (i.e., user manually scrolled, not due to new content)
+      if (scrollHeight === lastScrollHeightRef.current) {
+        userScrolledUpRef.current = true;
+      }
     }
     
     lastScrollHeightRef.current = scrollHeight;
