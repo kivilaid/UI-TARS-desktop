@@ -147,24 +147,43 @@ export const useAutoScroll = ({
     const currentHeight = container.scrollHeight;
     const heightChanged = currentHeight !== lastContentHeightRef.current;
     
-    // Only auto-scroll if:
-    // 1. Content height has changed (new content)
+    // Check if we're currently at bottom
+    const currentlyAtBottom = checkIsAtBottom();
+    
+    // Auto-scroll if:
+    // 1. Content height has changed (new content) OR this is initial load
     // 2. User is not actively scrolling
-    // 3. We were at bottom before the change
-    if (heightChanged && !isUserScrolling && wasAtBottomRef.current) {
+    // 3. We were at bottom before the change OR this is initial state
+    const shouldAutoScroll = (
+      (heightChanged || lastContentHeightRef.current === 0) &&
+      !isUserScrolling &&
+      (wasAtBottomRef.current || currentlyAtBottom)
+    );
+    
+    if (shouldAutoScroll) {
       // Use requestAnimationFrame to ensure DOM has updated
       requestAnimationFrame(() => {
         scrollToBottom();
       });
     }
     
+    // Update refs
     lastContentHeightRef.current = currentHeight;
+    if (!isUserScrolling) {
+      wasAtBottomRef.current = currentlyAtBottom;
+    }
   }, dependencies); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initial scroll to bottom when component mounts
   useEffect(() => {
     const timer = setTimeout(() => {
-      scrollToBottom();
+      const container = messagesContainerRef.current;
+      if (container) {
+        // Force initial scroll and reset states
+        wasAtBottomRef.current = true;
+        lastContentHeightRef.current = 0;
+        scrollToBottom();
+      }
     }, 100);
     
     return () => clearTimeout(timer);
