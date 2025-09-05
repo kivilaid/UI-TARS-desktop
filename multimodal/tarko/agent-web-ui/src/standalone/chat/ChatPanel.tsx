@@ -10,7 +10,6 @@ import { groupedMessagesAtom, messagesAtom } from '@/common/state/atoms/message'
 import { replayStateAtom } from '@/common/state/atoms/replay';
 import { useReplayMode } from '@/common/hooks/useReplayMode';
 import { useAutoScroll } from './hooks/useAutoScroll';
-import { ScrollToBottomButton } from './components/ScrollToBottomButton';
 import { ResearchReportEntry } from './ResearchReportEntry';
 import { EmptyState } from './components/EmptyState';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -40,13 +39,9 @@ export const ChatPanel: React.FC = () => {
       : [];
 
   // Auto-scroll functionality
-  const { messagesContainerRef, messagesEndRef, showScrollToBottom, scrollToBottom } =
-    useAutoScroll({
-      threshold: 100,
-      debounceMs: 150,
-      autoScrollDelay: 2000,
-      dependencies: [activeMessages, isProcessing],
-    });
+  const { messagesContainerRef, messagesEndRef, scrollToBottom } = useAutoScroll({
+    dependencies: [activeMessages, isProcessing],
+  });
 
   // Find research report in session
   const findResearchReport = () => {
@@ -127,8 +122,7 @@ export const ChatPanel: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 relative">
-        <ScrollToBottomButton show={showScrollToBottom} onClick={scrollToBottom} />
+      <div className="p-4">
         {researchReport && !isProcessing && (
           <div className="mb-4">
             <ResearchReportEntry
