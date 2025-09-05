@@ -68,18 +68,11 @@ export const ChatPanel: React.FC = () => {
 
   const researchReport = findResearchReport();
 
-  // Determine UI state
-  const shouldShowEmptyState = () => {
-    if (!currentSessionId || currentSessionId === 'creating') return false;
-    if (activeMessages.length > 0) return false;
-    if (isReplayMode && replayState.events.length > 0 && replayState.currentEventIndex === -1) {
-      return true;
-    }
-    return true;
-  };
-
-  const showEmptyState = shouldShowEmptyState();
+  // Simplified state logic
   const isCreatingSession = !currentSessionId || currentSessionId === 'creating';
+  const hasMessages = activeMessages.length > 0;
+  const isReplayWithoutEvents = isReplayMode && replayState.events.length > 0 && replayState.currentEventIndex === -1;
+  const showEmptyState = !isCreatingSession && (!hasMessages || isReplayWithoutEvents);
 
   // Render session creating state
   if (isCreatingSession) {
