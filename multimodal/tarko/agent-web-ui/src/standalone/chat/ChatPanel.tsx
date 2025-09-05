@@ -71,8 +71,9 @@ export const ChatPanel: React.FC = () => {
   // Simplified state logic
   const isCreatingSession = !currentSessionId || currentSessionId === 'creating';
   const hasMessages = activeMessages.length > 0;
-  const isReplayWithoutEvents = isReplayMode && replayState.events.length > 0 && replayState.currentEventIndex === -1;
-  const showEmptyState = !isCreatingSession && (!hasMessages || isReplayWithoutEvents);
+  const isReplayAtStart = isReplayMode && replayState.events.length > 0 && replayState.currentEventIndex === -1;
+  // Show empty state when: not creating AND (no messages OR replay at start)
+  const showEmptyState = !isCreatingSession && (!hasMessages || isReplayAtStart);
 
   // Render session creating state
   if (isCreatingSession) {
