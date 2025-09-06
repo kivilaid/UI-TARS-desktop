@@ -1,13 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FiMessageSquare, FiZap } from 'react-icons/fi';
+import { FiLoader } from 'react-icons/fi';
 
 interface SessionCreatingStateProps {
   isCreating: boolean;
 }
 
 /**
- * SessionCreatingState Component - Modern, elegant loading state with quality and emotional value
+ * SessionCreatingState Component - Unified loading state with clear loading indication
  */
 export const SessionCreatingState: React.FC<SessionCreatingStateProps> = ({ isCreating }) => {
   const containerVariants = {
@@ -15,21 +15,21 @@ export const SessionCreatingState: React.FC<SessionCreatingStateProps> = ({ isCr
     visible: {
       opacity: 1,
       transition: {
-        duration: 0.6,
-        staggerChildren: 0.15,
+        duration: 0.8,
+        staggerChildren: 0.2,
         ease: [0.25, 0.46, 0.45, 0.94],
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 24, scale: 0.95 },
+    hidden: { opacity: 0, y: 32, scale: 0.95 },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
       transition: {
-        duration: 0.6,
+        duration: 0.8,
         ease: [0.25, 0.46, 0.45, 0.94],
       },
     },
@@ -41,30 +41,8 @@ export const SessionCreatingState: React.FC<SessionCreatingStateProps> = ({ isCr
       scale: 1,
       opacity: 1,
       transition: {
-        duration: 0.7,
+        duration: 0.9,
         ease: [0.25, 0.46, 0.45, 0.94],
-      },
-    },
-  };
-
-  const pulseVariants = {
-    pulse: {
-      scale: [1, 1.05, 1],
-      transition: {
-        duration: 2.5,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      },
-    },
-  };
-
-  const floatingDots = {
-    float: {
-      y: [-8, 8, -8],
-      transition: {
-        duration: 3,
-        repeat: Infinity,
-        ease: 'easeInOut',
       },
     },
   };
@@ -81,11 +59,11 @@ export const SessionCreatingState: React.FC<SessionCreatingStateProps> = ({ isCr
       className="flex items-center justify-center h-full"
     >
       <div className="text-center max-w-sm mx-auto px-6">
-        {/* Enhanced icon with modern design */}
-        <motion.div variants={iconContainerVariants} className="relative mb-8">
-          {/* Background glow */}
+        {/* Loading icon with clear loading indication */}
+        <motion.div variants={iconContainerVariants} className="relative mb-10">
+          {/* Subtle background glow */}
           <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-blue-500/20 rounded-full blur-xl"
+            className="absolute inset-0 bg-gray-900/5 dark:bg-gray-100/5 rounded-full blur-2xl"
             animate={{
               scale: [0.8, 1.2, 0.8],
               opacity: [0.3, 0.6, 0.3],
@@ -97,88 +75,80 @@ export const SessionCreatingState: React.FC<SessionCreatingStateProps> = ({ isCr
             }}
           />
 
-          {/* Main icon container */}
+          {/* Main loading container */}
           <motion.div
-            className="relative w-20 h-20 bg-gradient-to-br from-white via-gray-50 to-white dark:from-gray-800 dark:via-gray-750 dark:to-gray-800 rounded-3xl flex items-center justify-center mx-auto shadow-lg border border-gray-200/60 dark:border-gray-700/60 backdrop-blur-sm"
-            variants={pulseVariants}
-            animate="pulse"
+            className="relative w-24 h-24 bg-white dark:bg-gray-900 rounded-3xl flex items-center justify-center mx-auto shadow-2xl border border-gray-200/60 dark:border-gray-700/60 backdrop-blur-sm"
+            animate={{
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
           >
-            {/* Icon */}
+            {/* Loading spinner */}
             <div className="relative z-10">
               <motion.div
                 animate={{
-                  rotate: [0, 180, 360],
-                  scale: [1, 1.1, 1],
+                  rotate: 360,
                 }}
                 transition={{
-                  duration: 4,
+                  duration: 2,
                   repeat: Infinity,
-                  ease: 'easeInOut',
+                  ease: 'linear',
                 }}
-                className="text-blue-600 dark:text-blue-400"
+                className="text-gray-700 dark:text-gray-300"
               >
-                <FiMessageSquare size={28} />
+                <FiLoader size={32} />
               </motion.div>
             </div>
 
-            {/* Accent dot */}
+            {/* Loading accent */}
             <motion.div
-              className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
+              className="absolute -top-2 -right-2 w-4 h-4 bg-gray-900 dark:bg-gray-100 rounded-full"
               animate={{
                 scale: [0.8, 1.2, 0.8],
-                opacity: [0.7, 1, 0.7],
+                opacity: [0.6, 1, 0.6],
               }}
               transition={{
-                duration: 2,
+                duration: 1.5,
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
             />
           </motion.div>
-
-          {/* Floating decorative elements */}
-          <motion.div
-            className="absolute -top-2 -left-2 w-2 h-2 bg-blue-400/60 rounded-full"
-            variants={floatingDots}
-            animate="float"
-          />
-          <motion.div
-            className="absolute -bottom-2 -right-2 w-1.5 h-1.5 bg-purple-400/60 rounded-full"
-            variants={floatingDots}
-            animate="float"
-            transition={{ delay: 1 }}
-          />
         </motion.div>
 
-        {/* Enhanced title with gradient */}
+        {/* Enhanced title with loading emphasis */}
         <motion.h2
           variants={itemVariants}
-          className="text-2xl font-semibold mb-3 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-white dark:to-gray-100 text-transparent bg-clip-text tracking-tight"
+          className="text-3xl font-light mb-6 text-gray-900 dark:text-gray-100 tracking-tight"
         >
           Preparing your session
         </motion.h2>
 
-        {/* Elegant description */}
+        {/* Clear loading description */}
         <motion.p
           variants={itemVariants}
-          className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed"
+          className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed text-lg"
         >
           Setting up your Agent workspace with care
         </motion.p>
 
-        {/* Modern progress indicator */}
-        <motion.div variants={itemVariants} className="flex items-center justify-center space-x-2">
-          <div className="flex space-x-1.5">
+        {/* Loading progress indicator */}
+        <motion.div variants={itemVariants} className="flex items-center justify-center">
+          <div className="flex space-x-2">
             {[0, 1, 2].map((i) => (
               <motion.div
                 key={i}
-                className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
+                className="w-3 h-3 bg-gray-700 dark:bg-gray-300 rounded-full"
                 animate={{
-                  scale: [0.8, 1.3, 0.8],
+                  scale: [0.8, 1.4, 0.8],
                   opacity: [0.4, 1, 0.4],
                 }}
                 transition={{
-                  duration: 1.5,
+                  duration: 1.2,
                   repeat: Infinity,
                   delay: i * 0.2,
                   ease: 'easeInOut',
@@ -186,15 +156,6 @@ export const SessionCreatingState: React.FC<SessionCreatingStateProps> = ({ isCr
               />
             ))}
           </div>
-
-          {/* Subtle accent */}
-          <motion.div
-            className="ml-4 text-blue-500/60 dark:text-blue-400/60"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <FiZap size={14} />
-          </motion.div>
         </motion.div>
       </div>
     </motion.div>
