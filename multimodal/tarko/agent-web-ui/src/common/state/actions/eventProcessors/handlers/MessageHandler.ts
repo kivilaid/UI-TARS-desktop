@@ -24,17 +24,51 @@ export class UserMessageHandler implements EventHandler<AgentEventStream.UserMes
     set(messagesAtom, (prev: Record<string, Message[]>) => {
       const sessionMessages = prev[sessionId] || [];
       
-      // Check if we have any local user messages - if so, skip this server event entirely
-      const hasLocalUserMessage = sessionMessages.some(
-        msg => msg.role === 'user' && msg.isLocalMessage
+      // Check if this exact message already exists (by content and timestamp proximity)
+      const isDuplicate = sessionMessages.some(
+        msg => msg.role === 'user' && 
+               JSON.stringify(msg.content) === JSON.stringify(event.content) &&
+               Math.abs(msg.timestamp - event.timestamp) < 5000 // 5 second tolerance
       );
       
-      // If we have a local user message, ignore the server event to prevent flicker
-      if (hasLocalUserMessage) {
+      // If we already have this message, skip adding it to prevent duplicates
+      if (isDuplicate) {
         return prev; // Return unchanged state
       }
       
-      // No local message found, add the server message normally
+      // Check if we have a recent local user message that hasn't been confirmed by server yet
+      const hasRecentLocalMessage = sessionMessages.some(
+        msg => msg.role === 'user' && 
+               msg.isLocalMessage &&
+               JSON.stringify(msg.content) === JSON.stringify(event.content) &&
+               Math.abs(msg.timestamp - event.timestamp) < 10000 // 10 second tolerance for local messages
+      );
+      
+      // If we have a matching local message, replace it with the server version
+      if (hasRecentLocalMessage) {
+        const updatedMessages = sessionMessages.map(msg => {
+          if (msg.role === 'user' && 
+              msg.isLocalMessage &&
+              JSON.stringify(msg.content) === JSON.stringify(event.content) &&
+              Math.abs(msg.timestamp - event.timestamp) < 10000) {
+            // Replace local message with server message
+            return {
+              id: event.id,
+              role: 'user',
+              content: event.content,
+              timestamp: event.timestamp,
+            };
+          }
+          return msg;
+        });
+        
+        return {
+          ...prev,
+          [sessionId]: updatedMessages,
+        };
+      }
+      
+      // No duplicate or local message found, add the server message normally
       const userMessage: Message = {
         id: event.id,
         role: 'user',
