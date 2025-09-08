@@ -9,6 +9,23 @@ import { shouldUpdatePanelContent } from '../utils/panelContentUpdater';
 const LEADING_NEWLINES_REGEX = /^\n+/;
 const NEWLINE_CHAR = '\n';
 
+// Performance optimization: debounce rapid state updates
+const updateDebounceMap = new Map<string, NodeJS.Timeout>();
+
+function debounceStateUpdate(key: string, updateFn: () => void, delay: number = 16): void {
+  const existing = updateDebounceMap.get(key);
+  if (existing) {
+    clearTimeout(existing);
+  }
+  
+  const timeout = setTimeout(() => {
+    updateFn();
+    updateDebounceMap.delete(key);
+  }, delay);
+  
+  updateDebounceMap.set(key, timeout);
+}
+
 export class UserMessageHandler implements EventHandler<AgentEventStream.UserMessageEvent> {
   canHandle(event: AgentEventStream.Event): event is AgentEventStream.UserMessageEvent {
     return event.type === 'user_message';
@@ -159,7 +176,11 @@ export class StreamingMessageHandler
   ): void {
     const { set } = context;
 
-    set(messagesAtom, (prev: Record<string, Message[]>) => {
+    // Debounce rapid streaming updates to improve performance
+    const debounceKey = `streaming-${sessionId}-${event.messageId || 'default'}`;
+    
+    debounceStateUpdate(debounceKey, () => {
+      set(messagesAtom, (prev: Record<string, Message[]>) => {
       const sessionMessages = prev[sessionId] || [];
       const messageIdToFind = event.messageId;
       let existingMessageIndex = -1;
@@ -213,6 +234,7 @@ export class StreamingMessageHandler
         ...prev,
         [sessionId]: [...sessionMessages, newMessage],
       };
+      });
     });
   }
 }

@@ -11,18 +11,56 @@ export const messagesAtom = atom<Record<string, Message[]>>({});
  * Atom for storing grouped messages for each session
  * Key is the session ID, value is an array of message groups for that session
  * This is derived from messagesAtom but with messages properly grouped
+ * Uses memoization to avoid unnecessary re-computation
  */
+const messageGroupCache = new Map<string, { messages: Message[]; groups: MessageGroup[] }>();
+
 export const groupedMessagesAtom = atom<Record<string, MessageGroup[]>>((get) => {
   const allMessages = get(messagesAtom);
   const result: Record<string, MessageGroup[]> = {};
 
-  // Process each session's messages into groups
+  // Process each session's messages into groups with caching
   Object.entries(allMessages).forEach(([sessionId, messages]) => {
-    result[sessionId] = createMessageGroups(messages);
+    const cached = messageGroupCache.get(sessionId);
+    
+    // Check if we can reuse cached groups
+    if (cached && arraysEqual(cached.messages, messages)) {
+      result[sessionId] = cached.groups;
+    } else {
+      // Compute new groups and cache them
+      const groups = createMessageGroups(messages);
+      messageGroupCache.set(sessionId, { messages: [...messages], groups });
+      result[sessionId] = groups;
+    }
   });
+
+  // Clean up cache for sessions that no longer exist
+  const existingSessionIds = new Set(Object.keys(allMessages));
+  for (const cachedSessionId of messageGroupCache.keys()) {
+    if (!existingSessionIds.has(cachedSessionId)) {
+      messageGroupCache.delete(cachedSessionId);
+    }
+  }
 
   return result;
 });
+
+/**
+ * Fast array equality check for messages
+ */
+function arraysEqual(a: Message[], b: Message[]): boolean {
+  if (a.length !== b.length) return false;
+  
+  // Quick check: compare last few messages for performance
+  const checkCount = Math.min(5, a.length);
+  for (let i = a.length - checkCount; i < a.length; i++) {
+    if (a[i].id !== b[i].id || a[i].timestamp !== b[i].timestamp) {
+      return false;
+    }
+  }
+  
+  return true;
+}
 
 /**
  * Group messages into logical conversation groups

@@ -5,7 +5,7 @@ import { sessionsAtom, activeSessionIdAtom } from '../atoms/session';
 import { messagesAtom } from '../atoms/message';
 import { toolResultsAtom, toolCallResultMap } from '../atoms/tool';
 import { sessionAgentStatusAtom, sessionPanelContentAtom, sessionMetadataAtom } from '../atoms/ui';
-import { processEventAction } from './eventProcessors';
+import { processEventAction, processBatchEventsAction } from './eventProcessors';
 import { Message, SessionInfo } from '@/common/types';
 import { connectionStatusAtom } from '../atoms/ui';
 import { replayStateAtom } from '../atoms/replay';
@@ -176,8 +176,15 @@ export const setActiveSessionAction = atom(null, async (get, set, sessionId: str
 
       const processedEvents = preprocessStreamingEvents(events);
 
-      for (const event of processedEvents) {
-        await set(processEventAction, { sessionId, event });
+      // Use batch processing for better performance when loading many events
+      if (processedEvents.length > 10) {
+        console.log(`Batch processing ${processedEvents.length} events for session ${sessionId}`);
+        await set(processBatchEventsAction, { sessionId, events: processedEvents });
+      } else {
+        // Use sequential processing for small event counts to maintain existing behavior
+        for (const event of processedEvents) {
+          await set(processEventAction, { sessionId, event });
+        }
       }
     } else {
       console.log(`Session ${sessionId} already has messages, skipping event loading`);
