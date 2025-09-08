@@ -92,8 +92,7 @@ class SocketService {
       this.notifyEventHandlers(SOCKET_EVENTS.AGENT_STATUS, status);
     });
 
-    // Immediately request current status
-    this.socket.emit('request-status', { sessionId });
+    // Status will be provided through normal socket events - no need to request immediately
   }
 
   /**

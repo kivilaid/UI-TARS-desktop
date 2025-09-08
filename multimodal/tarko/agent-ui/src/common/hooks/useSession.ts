@@ -22,7 +22,6 @@ import {
   deleteSessionAction,
   sendMessageAction,
   abortQueryAction,
-  checkSessionStatusAction,
 } from '../state/actions/sessionActions';
 import {
   initConnectionMonitoringAction,
@@ -68,15 +67,7 @@ export function useSession() {
   const abortQuery = useSetAtom(abortQueryAction);
   const initConnectionMonitoring = useSetAtom(initConnectionMonitoringAction);
   const checkServerStatus = useSetAtom(checkConnectionStatusAction);
-  const checkSessionStatus = useSetAtom(checkSessionStatusAction);
-
-  // Periodic status checking for active session - do not check status in replay mode
-  useEffect(() => {
-    if (!activeSessionId || !connectionStatus.connected || isReplayMode) return;
-
-    // Initial status check when session becomes active
-    checkSessionStatus(activeSessionId);
-  }, [activeSessionId, connectionStatus.connected, isReplayMode]);
+  // Session status is managed entirely through socket events - no manual checking needed
 
 
 
@@ -169,9 +160,6 @@ export function useSession() {
       // Connection operations
       initConnectionMonitoring,
       checkServerStatus,
-
-      // Status operations
-      checkSessionStatus,
     }),
     [
       sessions,
@@ -198,7 +186,6 @@ export function useSession() {
       setActivePanelContent,
       initConnectionMonitoring,
       checkServerStatus,
-      checkSessionStatus,
     ],
   );
 

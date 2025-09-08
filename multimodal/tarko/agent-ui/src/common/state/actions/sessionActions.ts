@@ -141,28 +141,14 @@ export const setActiveSessionAction = atom(null, async (get, set, sessionId: str
       });
     }
 
-    // Update processing status based on current session state
-    try {
-      const status = await apiService.getSessionStatus(sessionId);
-      set(sessionAgentStatusAtom, (prev) => ({
-        ...prev,
-        [sessionId]: {
-          isProcessing: status.isProcessing,
-          state: status.state,
-          phase: status.phase,
-          message: status.message,
-          estimatedTime: status.estimatedTime,
-        },
-      }));
-    } catch (error) {
-      console.warn('Failed to get session status:', error);
-      set(sessionAgentStatusAtom, (prev) => ({
-        ...prev,
-        [sessionId]: {
-          isProcessing: false,
-        },
-      }));
-    }
+    // Initialize session status as not processing - status will be updated via socket events
+    set(sessionAgentStatusAtom, (prev) => ({
+      ...prev,
+      [sessionId]: {
+        ...(prev[sessionId] || {}),
+        isProcessing: false,
+      },
+    }));
 
     toolCallResultMap.clear();
 
@@ -464,24 +450,5 @@ export const abortQueryAction = atom(null, async (get, set) => {
   }
 });
 
-export const checkSessionStatusAction = atom(null, async (get, set, sessionId: string) => {
-  if (!sessionId) return;
-
-  try {
-    const status = await apiService.getSessionStatus(sessionId);
-    set(sessionAgentStatusAtom, (prev) => ({
-      ...prev,
-      [sessionId]: {
-        isProcessing: status.isProcessing,
-        state: status.state,
-        phase: status.phase,
-        message: status.message,
-        estimatedTime: status.estimatedTime,
-      },
-    }));
-
-    return status;
-  } catch (error) {
-    console.error('Failed to check session status:', error);
-  }
-});
+// Session status is now managed entirely through socket events
+// No need for manual status checking - socket will provide real-time updates
