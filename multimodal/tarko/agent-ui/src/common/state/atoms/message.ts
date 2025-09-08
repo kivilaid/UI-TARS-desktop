@@ -22,7 +22,7 @@ export const groupedMessagesAtom = atom<Record<string, MessageGroup[]>>((get) =>
   // Process each session's messages into groups with caching
   Object.entries(allMessages).forEach(([sessionId, messages]) => {
     const cached = messageGroupCache.get(sessionId);
-    
+
     // Check if we can reuse cached groups
     if (cached && arraysEqual(cached.messages, messages)) {
       result[sessionId] = cached.groups;
@@ -36,7 +36,7 @@ export const groupedMessagesAtom = atom<Record<string, MessageGroup[]>>((get) =>
 
   // Clean up cache for sessions that no longer exist
   const existingSessionIds = new Set(Object.keys(allMessages));
-  for (const cachedSessionId of messageGroupCache.keys()) {
+  for (const cachedSessionId of Array.from(messageGroupCache.keys())) {
     if (!existingSessionIds.has(cachedSessionId)) {
       messageGroupCache.delete(cachedSessionId);
     }
@@ -50,7 +50,7 @@ export const groupedMessagesAtom = atom<Record<string, MessageGroup[]>>((get) =>
  */
 function arraysEqual(a: Message[], b: Message[]): boolean {
   if (a.length !== b.length) return false;
-  
+
   // Quick check: compare last few messages for performance
   const checkCount = Math.min(5, a.length);
   for (let i = a.length - checkCount; i < a.length; i++) {
@@ -58,7 +58,7 @@ function arraysEqual(a: Message[], b: Message[]): boolean {
       return false;
     }
   }
-  
+
   return true;
 }
 

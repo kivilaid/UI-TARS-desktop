@@ -10,11 +10,11 @@ export class PerformanceMonitor {
    */
   static startMeasurement(operationId: string): () => void {
     const startTime = performance.now();
-    
+
     return () => {
       const duration = performance.now() - startTime;
       this.recordMeasurement(operationId, duration);
-      
+
       // Log performance violations (similar to browser warnings)
       if (duration > 16) {
         console.warn(`[Performance] '${operationId}' handler took ${Math.round(duration)}ms`);
@@ -29,10 +29,10 @@ export class PerformanceMonitor {
     if (!this.measurements.has(operationId)) {
       this.measurements.set(operationId, []);
     }
-    
+
     const measurements = this.measurements.get(operationId)!;
     measurements.push(duration);
-    
+
     // Keep only recent measurements
     if (measurements.length > this.MAX_MEASUREMENTS) {
       measurements.shift();
@@ -69,11 +69,11 @@ export class PerformanceMonitor {
    */
   static getAllStats(): Record<string, ReturnType<typeof PerformanceMonitor.getStats>> {
     const result: Record<string, ReturnType<typeof PerformanceMonitor.getStats>> = {};
-    
-    for (const operationId of this.measurements.keys()) {
+
+    for (const operationId of Array.from(this.measurements.keys())) {
       result[operationId] = this.getStats(operationId);
     }
-    
+
     return result;
   }
 
@@ -89,12 +89,12 @@ export class PerformanceMonitor {
    */
   static logSummary(): void {
     const stats = this.getAllStats();
-    
+
     console.group('Performance Summary');
     Object.entries(stats).forEach(([operationId, stat]) => {
       if (stat) {
         console.log(
-          `${operationId}: avg=${stat.average.toFixed(1)}ms, max=${stat.max.toFixed(1)}ms, count=${stat.count}`
+          `${operationId}: avg=${stat.average.toFixed(1)}ms, max=${stat.max.toFixed(1)}ms, count=${stat.count}`,
         );
       }
     });
@@ -106,15 +106,19 @@ export class PerformanceMonitor {
  * Decorator for measuring function performance
  */
 export function measurePerformance(operationId: string) {
-  return function <T extends (...args: any[]) => any>(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function <T extends (...args: any[]) => any>(
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor,
+  ) {
     const originalMethod = descriptor.value;
-    
+
     descriptor.value = function (...args: any[]) {
       const endMeasurement = PerformanceMonitor.startMeasurement(`${operationId}.${propertyKey}`);
-      
+
       try {
         const result = originalMethod.apply(this, args);
-        
+
         if (result instanceof Promise) {
           return result.finally(() => endMeasurement());
         } else {
@@ -126,7 +130,7 @@ export function measurePerformance(operationId: string) {
         throw error;
       }
     };
-    
+
     return descriptor;
   };
 }

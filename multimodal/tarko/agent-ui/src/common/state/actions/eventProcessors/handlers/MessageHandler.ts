@@ -17,12 +17,12 @@ function debounceStateUpdate(key: string, updateFn: () => void, delay: number = 
   if (existing) {
     clearTimeout(existing);
   }
-  
+
   const timeout = setTimeout(() => {
     updateFn();
     updateDebounceMap.delete(key);
   }, delay);
-  
+
   updateDebounceMap.set(key, timeout);
 }
 
@@ -178,62 +178,62 @@ export class StreamingMessageHandler
 
     // Debounce rapid streaming updates to improve performance
     const debounceKey = `streaming-${sessionId}-${event.messageId || 'default'}`;
-    
+
     debounceStateUpdate(debounceKey, () => {
       set(messagesAtom, (prev: Record<string, Message[]>) => {
-      const sessionMessages = prev[sessionId] || [];
-      const messageIdToFind = event.messageId;
-      let existingMessageIndex = -1;
+        const sessionMessages = prev[sessionId] || [];
+        const messageIdToFind = event.messageId;
+        let existingMessageIndex = -1;
 
-      // Find by messageId first, fallback to last streaming message
-      if (messageIdToFind) {
-        existingMessageIndex = sessionMessages.findIndex(
-          (msg) => msg.messageId === messageIdToFind,
-        );
-      } else if (sessionMessages.length > 0) {
-        const lastMessageIndex = sessionMessages.length - 1;
-        const lastMessage = sessionMessages[lastMessageIndex];
-        if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isStreaming) {
-          existingMessageIndex = lastMessageIndex;
+        // Find by messageId first, fallback to last streaming message
+        if (messageIdToFind) {
+          existingMessageIndex = sessionMessages.findIndex(
+            (msg) => msg.messageId === messageIdToFind,
+          );
+        } else if (sessionMessages.length > 0) {
+          const lastMessageIndex = sessionMessages.length - 1;
+          const lastMessage = sessionMessages[lastMessageIndex];
+          if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isStreaming) {
+            existingMessageIndex = lastMessageIndex;
+          }
         }
-      }
 
-      if (existingMessageIndex !== -1) {
-        const existingMessage = sessionMessages[existingMessageIndex];
-        const updatedMessage = {
-          ...existingMessage,
-          content:
-            typeof existingMessage.content === 'string'
-              ? existingMessage.content + event.content
-              : event.content,
+        if (existingMessageIndex !== -1) {
+          const existingMessage = sessionMessages[existingMessageIndex];
+          const updatedMessage = {
+            ...existingMessage,
+            content:
+              typeof existingMessage.content === 'string'
+                ? existingMessage.content + event.content
+                : event.content,
+            isStreaming: !event.isComplete,
+            toolCalls: event.toolCalls || existingMessage.toolCalls,
+          };
+
+          return {
+            ...prev,
+            [sessionId]: [
+              ...sessionMessages.slice(0, existingMessageIndex),
+              updatedMessage,
+              ...sessionMessages.slice(existingMessageIndex + 1),
+            ],
+          };
+        }
+
+        const newMessage: Message = {
+          id: event.id || uuidv4(),
+          role: 'assistant',
+          content: event.content,
+          timestamp: event.timestamp,
           isStreaming: !event.isComplete,
-          toolCalls: event.toolCalls || existingMessage.toolCalls,
+          toolCalls: event.toolCalls,
+          messageId: event.messageId,
         };
 
         return {
           ...prev,
-          [sessionId]: [
-            ...sessionMessages.slice(0, existingMessageIndex),
-            updatedMessage,
-            ...sessionMessages.slice(existingMessageIndex + 1),
-          ],
+          [sessionId]: [...sessionMessages, newMessage],
         };
-      }
-
-      const newMessage: Message = {
-        id: event.id || uuidv4(),
-        role: 'assistant',
-        content: event.content,
-        timestamp: event.timestamp,
-        isStreaming: !event.isComplete,
-        toolCalls: event.toolCalls,
-        messageId: event.messageId,
-      };
-
-      return {
-        ...prev,
-        [sessionId]: [...sessionMessages, newMessage],
-      };
       });
     });
   }

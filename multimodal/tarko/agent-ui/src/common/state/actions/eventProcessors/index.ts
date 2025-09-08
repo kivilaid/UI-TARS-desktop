@@ -17,7 +17,7 @@ export const processEventAction = atom(null, async (get, set, params: EventProce
 
   // Get replay state to pass to handlers if needed
   const replayState = get(replayStateAtom);
-  const isReplayMode = replayState.isActive;
+  const isReplayMode = replayState?.isActive || false;
 
   // Skip streaming events in replay mode (except for specific types)
   if (isReplayMode) {
@@ -71,8 +71,10 @@ export const processBatchEventsAction = atom(
     const endBatchProcessing = PerformanceMonitor.startMeasurement('batch.processing');
     await BatchEventProcessor.processBatch(context, sessionId, optimizedEvents);
     endBatchProcessing();
-    
-    console.log(`Processed ${events.length} events (optimized to ${optimizedEvents.length}) for session ${sessionId}`);
+
+    console.log(
+      `Processed ${events.length} events (optimized to ${optimizedEvents.length}) for session ${sessionId}`,
+    );
   },
 );
 

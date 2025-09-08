@@ -20,7 +20,7 @@ export class BatchEventProcessor {
   ): Promise<void> {
     const { get } = context;
     const replayState = get(replayStateAtom);
-    const isReplayMode = replayState.isActive;
+    const isReplayMode = replayState?.isActive || false;
 
     // Filter events for replay mode
     const filteredEvents = isReplayMode
@@ -38,11 +38,11 @@ export class BatchEventProcessor {
     // Process events in batches
     for (let i = 0; i < filteredEvents.length; i += this.BATCH_SIZE) {
       const batch = filteredEvents.slice(i, i + this.BATCH_SIZE);
-      
+
       // Process batch synchronously for better performance
       for (const event of batch) {
         const handler = eventHandlerRegistry.findHandler(event);
-        
+
         if (handler) {
           try {
             await handler.handle(context, sessionId, event);
@@ -84,7 +84,7 @@ export class BatchEventProcessor {
 
     // Consolidate streaming events to final states
     const consolidatedStreamingEvents: AgentEventStream.Event[] = [];
-    for (const [messageId, streamEvents] of messageStreams) {
+    for (const [messageId, streamEvents] of Array.from(messageStreams.entries())) {
       const consolidated = this.consolidateStreamingEvents(streamEvents);
       if (consolidated) {
         consolidatedStreamingEvents.push(consolidated);
@@ -112,15 +112,13 @@ export class BatchEventProcessor {
 
     // Sort by timestamp to ensure correct order
     events.sort((a, b) => a.timestamp - b.timestamp);
-    
+
     const firstEvent = events[0];
     const lastEvent = events[events.length - 1];
 
     // For streaming messages, create a final consolidated event
     if (firstEvent.type === 'assistant_streaming_message') {
-      const content = events
-        .map((e) => (e as any).content || '')
-        .join('');
+      const content = events.map((e) => (e as any).content || '').join('');
 
       return {
         ...lastEvent,
