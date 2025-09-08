@@ -147,11 +147,9 @@ export const setActiveSessionAction = atom(null, async (get, set, sessionId: str
       set(sessionAgentStatusAtom, (prev) => ({
         ...prev,
         [sessionId]: {
+          ...(prev[sessionId] || {}), // Preserve existing fields
           isProcessing: status.isProcessing,
           state: status.state,
-          phase: status.phase,
-          message: status.message,
-          estimatedTime: status.estimatedTime,
         },
       }));
       console.log(`Retrieved real session status for ${sessionId}:`, status);
@@ -488,11 +486,9 @@ export const checkSessionStatusAction = atom(null, async (get, set, sessionId: s
     set(sessionAgentStatusAtom, (prev) => ({
       ...prev,
       [sessionId]: {
+        ...(prev[sessionId] || {}), // Preserve existing fields
         isProcessing: status.isProcessing,
         state: status.state,
-        phase: status.phase,
-        message: status.message,
-        estimatedTime: status.estimatedTime,
       },
     }));
 

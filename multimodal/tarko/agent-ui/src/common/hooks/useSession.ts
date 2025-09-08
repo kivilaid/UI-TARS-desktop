@@ -101,12 +101,9 @@ export function useSession() {
       statusUpdateHandler,
     );
 
-    // Register global status handler
-    socketService.on('agent-status', statusUpdateHandler);
-
+    // No need for additional global handler - joinSession already handles status updates
     return () => {
-      // Clean up handlers
-      socketService.off('agent-status', statusUpdateHandler);
+      // Cleanup is handled by joinSession's internal logic
     };
   }, [activeSessionId, isReplayMode]);
 
