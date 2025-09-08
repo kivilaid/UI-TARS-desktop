@@ -207,6 +207,9 @@ export class TraceTransformer {
       const messageId = this.generateMessageId();
       const ttltMs = timestamp - context.startTime;
       
+      // Parse XML-style function calls from content
+      const toolCalls = this.parseXMLFunctionCalls(outputs.content);
+      
       const event: AgentEventStream.AssistantMessageEvent = {
         id: this.generateId(),
         type: 'assistant_message',
@@ -217,20 +220,50 @@ export class TraceTransformer {
         messageId
       };
 
-      // Add tool calls if present
-      if (outputs.tool_calls && Array.isArray(outputs.tool_calls)) {
-        event.toolCalls = outputs.tool_calls.map((tc: any) => ({
-          id: tc.id,
-          type: tc.type,
-          function: {
-            name: tc.function.name,
-            arguments: tc.function.arguments
-          }
-        }));
+      // Add parsed tool calls if present
+      if (toolCalls.length > 0) {
+        event.toolCalls = toolCalls;
       }
 
       this.events.push(event);
     }
+  }
+
+  private parseXMLFunctionCalls(content: string): any[] {
+    const toolCalls: any[] = [];
+    
+    // Regex to match XML-style function calls
+    const functionRegex = /<function=([^>]+)>([\s\S]*?)<\/function>/g;
+    let match;
+    
+    while ((match = functionRegex.exec(content)) !== null) {
+      const functionName = match[1];
+      const parametersXML = match[2];
+      
+      // Parse parameters from XML
+      const parameters: Record<string, any> = {};
+      const paramRegex = /<parameter=([^>]+)>([\s\S]*?)<\/parameter>/g;
+      let paramMatch;
+      
+      while ((paramMatch = paramRegex.exec(parametersXML)) !== null) {
+        const paramName = paramMatch[1];
+        const paramValue = paramMatch[2].trim();
+        parameters[paramName] = paramValue;
+      }
+      
+      // Generate tool call in OpenAI format
+      const toolCallId = this.generateToolCallId();
+      toolCalls.push({
+        id: toolCallId,
+        type: 'function',
+        function: {
+          name: functionName,
+          arguments: JSON.stringify(parameters)
+        }
+      });
+    }
+    
+    return toolCalls;
   }
 
   private createToolCallEvent(trace: TraceEvent, timestamp: number): void {
