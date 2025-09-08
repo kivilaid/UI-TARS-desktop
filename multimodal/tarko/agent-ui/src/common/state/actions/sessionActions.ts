@@ -401,14 +401,27 @@ export const sendMessageAction = atom(
       });
     } catch (error) {
       console.error('Error sending message:', error);
-      // Set processing to false for this session on error
+      
+      // Set processing to false and add error state
       set(sessionAgentStatusAtom, (prev) => ({
         ...prev,
         [activeSessionId]: {
           ...(prev[activeSessionId] || {}),
           isProcessing: false,
+          state: 'error',
+          message: error instanceof Error ? error.message : 'Network error occurred',
         },
       }));
+      
+      // Also update connection status if it's a network error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        set(connectionStatusAtom, (prev) => ({
+          ...prev,
+          connected: false,
+          lastError: 'Server connection lost',
+        }));
+      }
+      
       throw error;
     }
   },
