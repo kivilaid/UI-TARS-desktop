@@ -57,7 +57,7 @@ export class AIOHybridOperator extends Operator {
   }
 
   private async initialize(options: AIOHybridOptions): Promise<void> {
-    this.aioComputer.screenshot(0); // Ping the aio sandbox
+    await this.aioComputer.click(1, 100); // Ping the aio sandbox to prevent risk control from target website
     this.aioBrowser = await AIOBrowser.create({
       baseURl: options.baseURL,
       logger: logger,
