@@ -200,6 +200,7 @@ export function useSession() {
       setActivePanelContent,
       initConnectionMonitoring,
       checkServerStatus,
+      checkSessionStatus,
     ],
   );
 
