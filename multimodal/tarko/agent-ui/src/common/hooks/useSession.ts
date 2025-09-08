@@ -76,7 +76,7 @@ export function useSession() {
 
     // Initial status check when session becomes active
     checkSessionStatus(activeSessionId);
-  }, [activeSessionId, connectionStatus.connected, checkSessionStatus, isReplayMode]);
+  }, [activeSessionId, connectionStatus.connected, isReplayMode]);
 
   // Enhanced socket handler for session status sync - do not update state in replay mode
   const handleSessionStatusUpdate = useCallback(
@@ -200,7 +200,6 @@ export function useSession() {
       setActivePanelContent,
       initConnectionMonitoring,
       checkServerStatus,
-      checkSessionStatus,
     ],
   );
 
