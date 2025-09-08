@@ -141,14 +141,31 @@ export const setActiveSessionAction = atom(null, async (get, set, sessionId: str
       });
     }
 
-    // Initialize session status as not processing - status will be updated via socket events
-    set(sessionAgentStatusAtom, (prev) => ({
-      ...prev,
-      [sessionId]: {
-        ...(prev[sessionId] || {}),
-        isProcessing: false,
-      },
-    }));
+    // Check real session status on activation (page refresh/session switch)
+    try {
+      const status = await apiService.getSessionStatus(sessionId);
+      set(sessionAgentStatusAtom, (prev) => ({
+        ...prev,
+        [sessionId]: {
+          isProcessing: status.isProcessing,
+          state: status.state,
+          phase: status.phase,
+          message: status.message,
+          estimatedTime: status.estimatedTime,
+        },
+      }));
+      console.log(`Retrieved real session status for ${sessionId}:`, status);
+    } catch (error) {
+      console.warn('Failed to get session status on activation:', error);
+      // Fallback to not processing if status check fails
+      set(sessionAgentStatusAtom, (prev) => ({
+        ...prev,
+        [sessionId]: {
+          ...(prev[sessionId] || {}),
+          isProcessing: false,
+        },
+      }));
+    }
 
     toolCallResultMap.clear();
 
@@ -463,5 +480,28 @@ export const abortQueryAction = atom(null, async (get, set) => {
   }
 });
 
-// Session status is now managed entirely through socket events
-// No need for manual status checking - socket will provide real-time updates
+export const checkSessionStatusAction = atom(null, async (get, set, sessionId: string) => {
+  if (!sessionId) return;
+
+  try {
+    const status = await apiService.getSessionStatus(sessionId);
+    set(sessionAgentStatusAtom, (prev) => ({
+      ...prev,
+      [sessionId]: {
+        isProcessing: status.isProcessing,
+        state: status.state,
+        phase: status.phase,
+        message: status.message,
+        estimatedTime: status.estimatedTime,
+      },
+    }));
+
+    return status;
+  } catch (error) {
+    console.error('Failed to check session status:', error);
+    return null;
+  }
+});
+
+// Session status is primarily managed through socket events,
+// but manual checking is still needed for page refresh/session activation

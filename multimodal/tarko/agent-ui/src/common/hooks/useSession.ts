@@ -22,6 +22,7 @@ import {
   deleteSessionAction,
   sendMessageAction,
   abortQueryAction,
+  checkSessionStatusAction,
 } from '../state/actions/sessionActions';
 import {
   initConnectionMonitoringAction,
@@ -67,7 +68,7 @@ export function useSession() {
   const abortQuery = useSetAtom(abortQueryAction);
   const initConnectionMonitoring = useSetAtom(initConnectionMonitoringAction);
   const checkServerStatus = useSetAtom(checkConnectionStatusAction);
-  // Session status is managed entirely through socket events - no manual checking needed
+  const checkSessionStatus = useSetAtom(checkSessionStatusAction);
 
 
 
@@ -160,6 +161,9 @@ export function useSession() {
       // Connection operations
       initConnectionMonitoring,
       checkServerStatus,
+
+      // Status operations
+      checkSessionStatus,
     }),
     [
       sessions,
@@ -186,6 +190,7 @@ export function useSession() {
       setActivePanelContent,
       initConnectionMonitoring,
       checkServerStatus,
+      checkSessionStatus,
     ],
   );
 
