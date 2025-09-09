@@ -3,8 +3,7 @@ import { Stream } from 'openai/streaming';
 import { ChatCompletion, ChatCompletionChunk, ChatCompletionMessageParam } from 'openai/resources';
 import { createWriteStream, existsSync, mkdirSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
-import { SYSTEM_PROMPT_GROUP } from '../src/environments/prompt_t5';
-import { SYSTEM_PROMPT } from '../src/environments/prompt';
+import { SYSTEM_PROMPT_GROUP } from '../src/environments/prompt';
 
 interface RequestOptions {
   maxTokens?: number;
@@ -44,8 +43,8 @@ async function requestModel(prompt: string, options: RequestOptions = {}): Promi
 
     //@ts-ignore
     const response = await openAI.chat.completions.create({
-      model: 'ep-20250830114613-nvhqh', //T5
-      //   model: 'ep-20250813205932-v7bmd',
+      // model: 'ep-20250909173748-wcfb2',
+      model: 'ep-20250905175225-hlrvd',
       messages,
       max_tokens: options.maxTokens || 32768,
       temperature: options.temperature || 1,
@@ -89,5 +88,5 @@ async function logContent(content: string | null, path: string) {
   console.log('write finished.');
 }
 
-run('write quick sort in python');
-// run('hi');
+// run('write quick sort in python');
+run('hi');
