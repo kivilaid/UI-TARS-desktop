@@ -55,7 +55,7 @@ export function getAvailableModels(req: Request, res: Response) {
     res.status(200).json({
       models: modelsResponse,
       defaultModel,
-      hasMultipleProviders: availableModels.length > 0,
+      hasMultipleProviders: availableModels.length > 1,
     });
   } catch (error) {
     console.error('Failed to get available models:', error);

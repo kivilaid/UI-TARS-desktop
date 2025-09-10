@@ -2,7 +2,7 @@
 import path from 'path';
 import { AgentAppConfig } from '../types';
 import { SanitizedAgentOptions, SanitizedTool } from '@tarko/interface';
-import { Tool, ProviderOptions } from '@tarko/interface';
+import { Tool, ModelDefaultSelection } from '@tarko/interface';
 
 /**
  * Sanitize agent configuration, hiding sensitive information
@@ -23,22 +23,11 @@ export function sanitizeAgentOptions(options: AgentAppConfig): SanitizedAgentOpt
 
   // Model configuration
   if (options.model !== undefined) {
-    const modelConfig: ProviderOptions = { ...options.model };
+    const modelConfig: ModelDefaultSelection = { ...options.model };
 
     // Sanitize API key if present
     if (modelConfig.apiKey) {
       modelConfig.apiKey = sanitizeApiKey(modelConfig.apiKey); // secretlint-disable-line
-    }
-
-    // Sanitize providers array if present
-    if (modelConfig.providers && Array.isArray(modelConfig.providers)) {
-      modelConfig.providers = modelConfig.providers.map((provider: any) => {
-        const sanitizedProvider = { ...provider };
-        if (sanitizedProvider.apiKey) {
-          sanitizedProvider.apiKey = sanitizeApiKey(sanitizedProvider.apiKey); // secretlint-disable-line
-        }
-        return sanitizedProvider;
-      });
     }
 
     sanitized.model = modelConfig;

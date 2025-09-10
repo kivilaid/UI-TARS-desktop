@@ -142,13 +142,14 @@ export class AgentServer<T extends AgentAppConfig = AgentAppConfig> {
   }
 
   /**
-   * Get currently available model providers
+   * Get currently available model providers from Web UI configuration
    */
   getAvailableModels(): Array<{ name: string; models: string[]; baseURL?: string }> {
-    const providers = this.appConfig.model?.providers || [];
-
+    // Get providers from Web UI configuration
+    const webUIProviders = this.appConfig.webui?.model?.providers || [];
+    
     // Convert new format to legacy format for API compatibility
-    return providers.map((provider) => ({
+    return webUIProviders.map((provider) => ({
       name: provider.name,
       models: provider.models.map((model) => (typeof model === 'string' ? model : model.id)),
       baseURL: provider.baseURL,
@@ -159,7 +160,7 @@ export class AgentServer<T extends AgentAppConfig = AgentAppConfig> {
    * Validate if a model configuration is still valid
    */
   isModelConfigValid(provider: string, modelId: string): boolean {
-    const providers = this.appConfig.model?.providers || [];
+    const providers = this.appConfig.webui?.model?.providers || [];
     return providers.some(
       (p) =>
         p.name === provider &&
@@ -238,6 +239,10 @@ export class AgentServer<T extends AgentAppConfig = AgentAppConfig> {
       }
     }
 
+    // Find the provider configuration from Web UI providers
+    const webUIProviders = this.appConfig.webui?.model?.providers || [];
+    const selectedProvider = webUIProviders.find(p => p.name === modelConfig.provider);
+    
     const agentAppOptionsWithModelConfig: T = {
       ...this.appConfig,
       name: this.getCurrentAgentName(),
@@ -245,6 +250,11 @@ export class AgentServer<T extends AgentAppConfig = AgentAppConfig> {
         ...this.appConfig.model,
         provider: modelConfig.provider,
         id: modelConfig.modelId,
+        // Use provider-specific configuration if available
+        ...(selectedProvider && {
+          apiKey: selectedProvider.apiKey,
+          baseURL: selectedProvider.baseURL,
+        }),
       },
     };
 

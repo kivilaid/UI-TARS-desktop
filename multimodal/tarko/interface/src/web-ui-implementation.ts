@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { ModelProvider } from '@tarko/model-provider/types';
+
 /**
  * Agent Web UI implementation type
  *
@@ -120,6 +122,17 @@ export interface TarkoWebUIGUIAgentConfig {
 }
 
 /**
+ * Model provider configuration for Web UI
+ */
+export interface WebUIModelConfig {
+  /**
+   * Available model providers for runtime switching
+   * When provided, enables model switching in the Web UI
+   */
+  providers?: ModelProvider[];
+}
+
+/**
  * Base agent implementation interface
  */
 export interface BaseAgentWebUIImplementation {
@@ -176,6 +189,10 @@ export interface BaseAgentWebUIImplementation {
    * GUI Agent configuration for web UI
    */
   guiAgent?: TarkoWebUIGUIAgentConfig;
+  /**
+   * Model configuration for web UI
+   */
+  model?: WebUIModelConfig;
 }
 
 /**

@@ -5,7 +5,8 @@
 
 /**
  * An minimal example, using built-in model provider.
- * and specify a model to use.
+ * Note: model.providers has been moved to Web UI configuration.
+ * This example shows the simplified Agent configuration.
  */
 
 import { Agent } from '../../src';
@@ -13,18 +14,10 @@ import { Agent } from '../../src';
 async function main() {
   const agent = new Agent({
     model: {
+      provider: 'deepseek',
       id: 'ep-20250205140236', // DeepSeek R1
-      providers: [
-        {
-          name: 'deepseek',
-          baseURL: 'https://ark-cn-beijing.bytedance.net/api/v3',
-          apiKey: process.env.ARK_DEEPSEEK_API_KEY,
-          models: [
-            'ep-20250205140052', // DeepSeek R1
-            'ep-20250205140236', // DeepSeek V3
-          ],
-        },
-      ],
+      baseURL: 'https://ark-cn-beijing.bytedance.net/api/v3',
+      apiKey: process.env.ARK_DEEPSEEK_API_KEY,
     },
   });
 
