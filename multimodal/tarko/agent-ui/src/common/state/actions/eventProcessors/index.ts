@@ -19,16 +19,16 @@ export const processEventAction = atom(null, async (get, set, params: EventProce
   const replayState = get(replayStateAtom);
   const isReplayMode = replayState?.isActive || false;
 
-  // Skip streaming events in replay mode (except for specific types)
+  // Skip streaming events in replay mode
   if (isReplayMode) {
     const skipInReplay = [
       'assistant_streaming_message',
-      'assistant_streaming_thinking_message',
+      'assistant_streaming_thinking_message', 
       'assistant_streaming_tool_call',
       'final_answer_streaming',
-    ];
+    ] as const;
 
-    if (skipInReplay.includes(event.type)) {
+    if (skipInReplay.includes(event.type as any)) {
       return;
     }
   }

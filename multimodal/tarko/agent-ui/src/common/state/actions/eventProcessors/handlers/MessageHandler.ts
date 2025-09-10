@@ -12,7 +12,7 @@ const NEWLINE_CHAR = '\n';
 // Performance optimization: debounce rapid state updates
 const updateDebounceMap = new Map<string, NodeJS.Timeout>();
 
-function debounceStateUpdate(key: string, updateFn: () => void, delay: number = 16): void {
+function debounceStateUpdate(key: string, updateFn: () => void, delay: number = 32): void {
   const existing = updateDebounceMap.get(key);
   if (existing) {
     clearTimeout(existing);

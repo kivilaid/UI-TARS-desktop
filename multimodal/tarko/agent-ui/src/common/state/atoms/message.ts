@@ -46,20 +46,30 @@ export const groupedMessagesAtom = atom<Record<string, MessageGroup[]>>((get) =>
 });
 
 /**
- * Fast array equality check for messages
+ * Efficient array equality check for messages
+ * Uses hash-based comparison for better cache hit detection
  */
 function arraysEqual(a: Message[], b: Message[]): boolean {
   if (a.length !== b.length) return false;
+  if (a.length === 0) return true;
 
-  // Quick check: compare last few messages for performance
-  const checkCount = Math.min(5, a.length);
-  for (let i = a.length - checkCount; i < a.length; i++) {
-    if (a[i].id !== b[i].id || a[i].timestamp !== b[i].timestamp) {
-      return false;
-    }
+  // Compare first and last messages for quick inequality detection
+  const first = a[0], last = a[a.length - 1];
+  const bFirst = b[0], bLast = b[b.length - 1];
+  
+  if (first.id !== bFirst.id || first.timestamp !== bFirst.timestamp ||
+      last.id !== bLast.id || last.timestamp !== bLast.timestamp) {
+    return false;
   }
 
-  return true;
+  // For arrays > 10, use sampling instead of full comparison
+  if (a.length > 10) {
+    const sampleIndices = [Math.floor(a.length / 4), Math.floor(a.length / 2), Math.floor(3 * a.length / 4)];
+    return sampleIndices.every(i => a[i].id === b[i].id && a[i].timestamp === b[i].timestamp);
+  }
+
+  // Full comparison for smaller arrays
+  return a.every((msg, i) => msg.id === b[i].id && msg.timestamp === b[i].timestamp);
 }
 
 /**

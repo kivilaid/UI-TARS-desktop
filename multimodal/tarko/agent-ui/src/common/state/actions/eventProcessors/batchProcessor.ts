@@ -3,12 +3,27 @@ import { eventHandlerRegistry } from './EventHandlerRegistry';
 import { AgentEventStream } from '@/common/types';
 import { replayStateAtom } from '@/common/state/atoms/replay';
 
+// Constants for event filtering and processing
+const SKIP_IN_REPLAY_EVENTS = [
+  'assistant_streaming_message',
+  'assistant_streaming_thinking_message', 
+  'assistant_streaming_tool_call',
+  'final_answer_streaming',
+] as const;
+
+const STREAMING_EVENT_TYPES = [
+  'assistant_streaming_message',
+  'assistant_streaming_thinking_message',
+  'assistant_streaming_tool_call', 
+  'final_answer_streaming',
+] as const;
+
 /**
  * Batch event processor for improved performance when loading large event streams
  */
 export class BatchEventProcessor {
   private static readonly BATCH_SIZE = 50;
-  private static readonly BATCH_DELAY = 0; // Process batches immediately but yield control
+  private static readonly BATCH_DELAY = 0;
 
   /**
    * Process events in batches to avoid blocking the main thread
@@ -22,17 +37,8 @@ export class BatchEventProcessor {
     const replayState = get(replayStateAtom);
     const isReplayMode = replayState?.isActive || false;
 
-    // Filter events for replay mode
     const filteredEvents = isReplayMode
-      ? events.filter((event) => {
-          const skipInReplay = [
-            'assistant_streaming_message',
-            'assistant_streaming_thinking_message',
-            'assistant_streaming_tool_call',
-            'final_answer_streaming',
-          ];
-          return !skipInReplay.includes(event.type);
-        })
+      ? events.filter((event) => !SKIP_IN_REPLAY_EVENTS.includes(event.type as any))
       : events;
 
     // Process events in batches
@@ -97,12 +103,7 @@ export class BatchEventProcessor {
   }
 
   private static isStreamingEvent(event: AgentEventStream.Event): boolean {
-    return [
-      'assistant_streaming_message',
-      'assistant_streaming_thinking_message',
-      'assistant_streaming_tool_call',
-      'final_answer_streaming',
-    ].includes(event.type);
+    return STREAMING_EVENT_TYPES.includes(event.type as any);
   }
 
   private static consolidateStreamingEvents(
@@ -118,7 +119,12 @@ export class BatchEventProcessor {
 
     // For streaming messages, create a final consolidated event
     if (firstEvent.type === 'assistant_streaming_message') {
-      const content = events.map((e) => (e as any).content || '').join('');
+      const content = events
+        .map((e) => {
+          const streamingEvent = e as AgentEventStream.AssistantStreamingMessageEvent;
+          return streamingEvent.content || '';
+        })
+        .join('');
 
       return {
         ...lastEvent,
