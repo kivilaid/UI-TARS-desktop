@@ -1,0 +1,43 @@
+{
+  "title": "Custom Agent UI",
+  "subtitle": "Configured via static file - offering seamless integration with a wide range of real-world tools.",
+  "logo": "https://lf3-static.bytednsdoc.com/obj/eden-cn/zyha-aulnh/ljhwZthlaukjlkulzlp/icon.png",
+  "welcomTitle": "Welcome to Custom Agent",
+  "welcomePrompts": [
+    "Search for the latest AI research papers",
+    "Help me build a React component",
+    "Analyze this codebase for potential improvements",
+    "Create a deployment script for Docker",
+    "Write comprehensive unit tests",
+    "Explain the architecture of this system"
+  ],
+  "workspace": {
+    "navItems": [
+      {
+        "title": "Code Editor",
+        "link": "./code-server/",
+        "icon": "code"
+      },
+      {
+        "title": "Terminal",
+        "link": "./terminal/",
+        "icon": "terminal"
+      },
+      {
+        "title": "File Manager",
+        "link": "./files/",
+        "icon": "folder"
+      }
+    ]
+  },
+  "guiAgent": {
+    "defaultScreenshotRenderStrategy": "afterAction",
+    "enableScreenshotRenderStrategySwitch": true,
+    "renderGUIAction": true,
+    "renderBrowserShell": false
+  },
+  "layout": {
+    "enableLayoutSwitchButton": true,
+    "defaultLayout": "default"
+  }
+}
