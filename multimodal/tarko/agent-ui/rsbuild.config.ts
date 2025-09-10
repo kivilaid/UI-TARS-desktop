@@ -5,6 +5,10 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [pluginReact()],
   source: {
+    define: {
+      'process.env.AGENT_BASE_URL': JSON.stringify(process.env.AGENT_BASE_URL || ''),
+      'process.env.ENV': JSON.stringify(process.env.ENV || 'development'),
+    },
     entry: {
       index: './src/entry.tsx',
     },
