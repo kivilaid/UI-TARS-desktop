@@ -32,6 +32,7 @@ POST /api/v1/sessions/delete
 ```
 **Usage**: Session lifecycle, chat history, metadata management
 **Critical**: Yes - Core functionality
+**Note**: `sessions/details` only used for metadata restoration when session has existing messages
 
 ### 3. Query Execution
 ```
@@ -111,7 +112,6 @@ GET /api/v1/version
 GET /api/v1/agent/options
 GET /api/v1/sessions
 POST /api/v1/sessions/create
-GET /api/v1/sessions/details
 GET /api/v1/sessions/events
 GET /api/v1/sessions/status
 POST /api/v1/sessions/update
@@ -119,19 +119,20 @@ POST /api/v1/sessions/delete
 POST /api/v1/sessions/query/stream
 POST /api/v1/sessions/abort
 ```
-**Total**: 12 endpoints
+**Total**: 11 endpoints
 **Functionality**: Basic chat, session management, health monitoring
 
 ### Tier 2: Enhanced UX
 ```
+GET /api/v1/sessions/details
 GET /api/v1/models
 POST /api/v1/sessions/model
 GET /api/v1/sessions/workspace/search
 POST /api/v1/sessions/workspace/validate
 POST /api/v1/sessions/generate-summary
 ```
-**Total**: +5 endpoints (17 total)
-**Functionality**: Model switching, workspace integration, auto-naming
+**Total**: +6 endpoints (17 total)
+**Functionality**: Metadata restoration, model switching, workspace integration, auto-naming
 
 ### Tier 3: Optional Features
 ```
@@ -146,7 +147,7 @@ POST /api/v1/oneshot/query/stream
 
 ## Recommendations
 
-1. **Minimal Deployment**: Implement Tier 1 (12 endpoints) for basic functionality
+1. **Minimal Deployment**: Implement Tier 1 (11 endpoints) for basic functionality
 2. **Standard Deployment**: Include Tier 1 + Tier 2 (17 endpoints) for full UX
 3. **Full Deployment**: All endpoints (22 endpoints) for complete feature set
 
