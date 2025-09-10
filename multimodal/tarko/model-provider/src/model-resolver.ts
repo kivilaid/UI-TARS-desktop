@@ -29,15 +29,15 @@ export class ModelResolver {
    *
    * @param options - Provider configuration options
    */
-  constructor(options: ProviderOptions = {}) {
-    this.providers = options.providers || [];
+  constructor(options: ProviderOptions | ModelDefaultSelection = {}) {
+    this.providers = 'providers' in options ? options.providers || [] : [];
     this.defaultSelection = this.buildDefaultSelection(options);
   }
 
   /**
    * Build the default model selection from options
    */
-  private buildDefaultSelection(options: ProviderOptions): ModelDefaultSelection {
+  private buildDefaultSelection(options: ProviderOptions | ModelDefaultSelection): ModelDefaultSelection {
     // Explicit selection takes priority
     if (
       options.id ||

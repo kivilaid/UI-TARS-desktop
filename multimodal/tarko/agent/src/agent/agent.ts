@@ -123,10 +123,7 @@ export class Agent<T extends AgentOptions = AgentOptions>
       });
     }
 
-    const { providers } = this.options.model ?? {};
-    if (Array.isArray(providers)) {
-      this.logger.info(`Found ${providers.length} custom model providers`);
-    }
+
 
     // Log the default selection
     const defaultSelection = this.modelResolver.getDefaultSelection();
