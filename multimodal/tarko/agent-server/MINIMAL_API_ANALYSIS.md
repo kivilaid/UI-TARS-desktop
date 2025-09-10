@@ -18,8 +18,8 @@ GET /api/v1/health
 GET /api/v1/version
 GET /api/v1/agent/options
 ```
-**Usage**: Server health checks, version display, workspace info
-**Critical**: Yes - Required for basic UI functionality
+**Usage**: Server health checks, version display (AboutModal), workspace info
+**Critical**: Mixed - `/health` and `/agent/options` essential, `/version` optional
 
 ### 2. Session Management
 ```
@@ -108,7 +108,6 @@ POST /api/v1/oneshot/query/stream
 ### Tier 1: Absolutely Required
 ```
 GET /api/v1/health
-GET /api/v1/version
 GET /api/v1/agent/options
 GET /api/v1/sessions
 POST /api/v1/sessions/create
@@ -119,11 +118,12 @@ POST /api/v1/sessions/delete
 POST /api/v1/sessions/query/stream
 POST /api/v1/sessions/abort
 ```
-**Total**: 11 endpoints
+**Total**: 10 endpoints
 **Functionality**: Basic chat, session management, health monitoring
 
 ### Tier 2: Enhanced UX
 ```
+GET /api/v1/version
 GET /api/v1/sessions/details
 GET /api/v1/models
 POST /api/v1/sessions/model
@@ -131,8 +131,8 @@ GET /api/v1/sessions/workspace/search
 POST /api/v1/sessions/workspace/validate
 POST /api/v1/sessions/generate-summary
 ```
-**Total**: +6 endpoints (17 total)
-**Functionality**: Metadata restoration, model switching, workspace integration, auto-naming
+**Total**: +7 endpoints (17 total)
+**Functionality**: Version info (AboutModal), metadata restoration, model switching, workspace integration, auto-naming
 
 ### Tier 3: Optional Features
 ```
@@ -147,7 +147,7 @@ POST /api/v1/oneshot/query/stream
 
 ## Recommendations
 
-1. **Minimal Deployment**: Implement Tier 1 (11 endpoints) for basic functionality
+1. **Minimal Deployment**: Implement Tier 1 (10 endpoints) for basic functionality
 2. **Standard Deployment**: Include Tier 1 + Tier 2 (17 endpoints) for full UX
 3. **Full Deployment**: All endpoints (22 endpoints) for complete feature set
 
