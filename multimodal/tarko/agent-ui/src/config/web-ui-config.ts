@@ -12,7 +12,6 @@ const CONFIG_CACHE_TTL = 5000; // 5 seconds
 
 /**
  * Get web UI configuration with enhanced multi-source loading
- * Maintains backward compatibility with existing API
  */
 export function getWebUIConfig(): BaseAgentWebUIImplementation {
   const now = Date.now();
@@ -99,25 +98,4 @@ export function isLayoutSwitchButtonEnabled(): boolean {
  */
 export function getDefaultLayoutMode() {
   return getLayoutConfig().defaultLayout || 'default';
-}
-
-/**
- * Clear configuration cache
- * Useful for forcing config reload
- */
-export function clearConfigCache() {
-  cachedConfig = null;
-  lastConfigCheck = 0;
-}
-
-/**
- * Get configuration loading source information
- * Useful for debugging configuration issues
- */
-export function getConfigSource() {
-  const result = loadWebUIConfigSync();
-  return {
-    source: result.source,
-    error: result.error,
-  };
 }

@@ -3,31 +3,27 @@
  * Priority: window.AGENT_BASE_URL > process.env.AGENT_BASE_URL > production fallback > development default
  */
 
+export const ENV_CONFIG = {
+  AGENT_BASE_URL: process.env.AGENT_BASE_URL || '',
+  IS_PRODUCTION: process.env.ENV === 'production',
+  IS_DEVELOPMENT: process.env.ENV === 'development',
+} as const;
+
 export const API_BASE_URL = (() => {
   if (typeof window !== 'undefined' && window.AGENT_BASE_URL) {
     return window.AGENT_BASE_URL;
   }
 
-  if (process.env.AGENT_BASE_URL) {
-    return process.env.AGENT_BASE_URL;
+  if (ENV_CONFIG.AGENT_BASE_URL) {
+    return ENV_CONFIG.AGENT_BASE_URL;
   }
 
-  if (process.env.ENV === 'production') {
+  if (ENV_CONFIG.IS_PRODUCTION) {
     return typeof window !== 'undefined' ? window.location.origin : '';
   }
 
   return 'http://localhost:3000';
 })();
-
-/**
- * Environment configuration
- */
-export const ENV_CONFIG = {
-  ENV: process.env.ENV || 'development',
-  AGENT_BASE_URL: process.env.AGENT_BASE_URL || '',
-  IS_PRODUCTION: process.env.ENV === 'production',
-  IS_DEVELOPMENT: process.env.ENV === 'development',
-} as const;
 
 /**
  * Default API endpoints

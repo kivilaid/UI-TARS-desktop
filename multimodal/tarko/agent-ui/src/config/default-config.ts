@@ -7,7 +7,6 @@ import type { BaseAgentWebUIImplementation, WorkspaceNavItem } from '@tarko/inte
 
 /**
  * Default Web UI configuration for standalone deployment
- * Based on the omni-agent configuration structure
  */
 export const DEFAULT_WEBUI_CONFIG: BaseAgentWebUIImplementation = {
   logo: 'https://lf3-static.bytednsdoc.com/obj/eden-cn/zyha-aulnh/ljhwZthlaukjlkulzlp/icon.png',
@@ -19,13 +18,6 @@ export const DEFAULT_WEBUI_CONFIG: BaseAgentWebUIImplementation = {
     'Find information about UI TARS',
     'Tell me the top 5 most popular projects on ProductHunt today',
     'Write hello world using python',
-    'Use jupyter to calculate which is greater in 9.11 and 9.9',
-    'Write code to reproduce seed-tars.com',
-    'Summary seed-tars.com/1.5',
-    'Write a python code to download the paper https://arxiv.org/abs/2505.12370, and convert the pdf to markdown',
-    'Search news about bytedance seed1.6 model, then write a web page in modern style and deploy it',
-    'Write a minimal code sample to help me use transformer',
-    'Please search for trending datasets on Hugging Face, download the top-ranked dataset, and calculate the total number of characters in the entire dataset.',
   ],
   workspace: {
     navItems: [
