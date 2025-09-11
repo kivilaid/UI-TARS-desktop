@@ -247,6 +247,18 @@ export const WorkspaceDetail: React.FC = () => {
       const toolMapping = getCurrentToolMapping();
       if (toolMapping) {
         return <RawModeRenderer toolMapping={toolMapping} />;
+      } else if (panelContent.toolCallId && panelContent.arguments) {
+        // For streaming operations, create a synthetic tool mapping
+        const syntheticToolMapping = {
+          toolCall: {
+            toolCallId: panelContent.toolCallId,
+            name: panelContent.title || 'unknown',
+            arguments: panelContent.arguments,
+            timestamp: panelContent.timestamp,
+          },
+          toolResult: null, // Still processing
+        };
+        return <RawModeRenderer toolMapping={syntheticToolMapping} />;
       } else {
         return (
           <div className="flex items-center justify-center h-full">
