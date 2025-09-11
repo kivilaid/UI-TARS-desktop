@@ -20,23 +20,48 @@ vi.mock('@tarko/shared-utils', () => ({
 }));
 
 describe('LLMProcessor - Abort Handling', () => {
-  // Test the core logic directly without full LLMProcessor instantiation
+  // Test the core logic with full createFinalEvents signature
   const createMockFinalEventsMethod = () => {
     const eventStream = new AgentEventStreamProcessor();
     
-    // Simulate the createFinalEvents method logic
-    return (content: string, abortSignal?: AbortSignal) => {
+    // Simulate the exact createFinalEvents method logic with full signature
+    return (
+      content: string,
+      rawContent: string = '',
+      currentToolCalls: any[] = [],
+      reasoningBuffer: string = '',
+      finishReason: string = 'stop',
+      messageId?: string,
+      ttftMs?: number,
+      ttltMs?: number,
+      abortSignal?: AbortSignal,
+    ) => {
+      // Core logic from actual implementation
       let finalContent = content;
       if (!content && abortSignal?.aborted) {
         finalContent = '[Request was aborted by user]';
       }
-      
-      if (finalContent) {
+
+      if (finalContent || currentToolCalls.length > 0) {
         const assistantEvent = eventStream.createEvent('assistant_message', {
           content: finalContent,
-          finishReason: 'stop',
+          rawContent: rawContent,
+          toolCalls: currentToolCalls.length > 0 ? currentToolCalls : undefined,
+          finishReason: finishReason,
+          messageId: messageId,
+          ttftMs: ttftMs,
+          ttltMs: ttltMs,
         });
         eventStream.sendEvent(assistantEvent);
+      }
+
+      if (reasoningBuffer) {
+        const thinkingEvent = eventStream.createEvent('assistant_thinking_message', {
+          content: reasoningBuffer,
+          isComplete: true,
+          messageId: messageId,
+        });
+        eventStream.sendEvent(thinkingEvent);
       }
       
       return eventStream;
@@ -48,7 +73,17 @@ describe('LLMProcessor - Abort Handling', () => {
     controller.abort();
     
     const createFinalEvents = createMockFinalEventsMethod();
-    const eventStream = createFinalEvents('', controller.signal);
+    const eventStream = createFinalEvents(
+      '', // content
+      '', // rawContent
+      [], // currentToolCalls
+      '', // reasoningBuffer
+      'stop', // finishReason
+      'test-msg-id', // messageId
+      100, // ttftMs
+      500, // ttltMs
+      controller.signal // abortSignal
+    );
     
     const events = eventStream.getEvents();
     expect(events.length).toBe(1);
@@ -71,7 +106,12 @@ describe('LLMProcessor - Abort Handling', () => {
           "content": "[Request was aborted by user]",
           "finishReason": "stop",
           "id": Any<String>,
+          "messageId": "test-msg-id",
+          "rawContent": "",
           "timestamp": Any<Number>,
+          "toolCalls": undefined,
+          "ttftMs": 100,
+          "ttltMs": 500,
           "type": "assistant_message",
         },
       ]
@@ -82,7 +122,17 @@ describe('LLMProcessor - Abort Handling', () => {
     const controller = new AbortController();
     
     const createFinalEvents = createMockFinalEventsMethod();
-    const eventStream = createFinalEvents('Original response', controller.signal);
+    const eventStream = createFinalEvents(
+      'Original response',
+      'raw content',
+      [],
+      '',
+      'stop',
+      undefined,
+      undefined,
+      undefined,
+      controller.signal
+    );
     
     const events = eventStream.getEvents();
     expect(events.length).toBe(1);
@@ -96,7 +146,17 @@ describe('LLMProcessor - Abort Handling', () => {
     controller.abort();
     
     const createFinalEvents = createMockFinalEventsMethod();
-    const eventStream = createFinalEvents('Partial response', controller.signal);
+    const eventStream = createFinalEvents(
+      'Partial response',
+      'raw partial',
+      [],
+      '',
+      'stop',
+      undefined,
+      undefined,
+      undefined,
+      controller.signal
+    );
     
     const events = eventStream.getEvents();
     expect(events.length).toBe(1);
