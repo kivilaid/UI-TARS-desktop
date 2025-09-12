@@ -147,8 +147,8 @@ describe('Agent', () => {
       // Initially, no current model should be available
       expect(agent.getCurrentModel()).toMatchInlineSnapshot(`
         {
-          "actualProvider": "openai",
           "apiKey": undefined,
+          "baseProvider": "openai",
           "baseURL": undefined,
           "displayName": undefined,
           "id": "gpt-4o",
