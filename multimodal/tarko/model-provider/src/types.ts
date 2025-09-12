@@ -24,7 +24,7 @@ export type ModelProviderName =
   | 'deepseek';
 
 /**
- * Model provider basic configuration
+ * Basic Model configuration
  *
  * Shared between Agent and LLM.
  */
@@ -44,13 +44,11 @@ export interface Model {
 }
 
 /**
- * Default model selection configuration
- *
- * Used for Agent Kernel.
+ * Model configuration used by the Agent.
  */
 export interface AgentModel extends Model {
   /**
-   * Provider name
+   * High-lelvel Provider name
    */
   provider: ModelProviderName;
   /**

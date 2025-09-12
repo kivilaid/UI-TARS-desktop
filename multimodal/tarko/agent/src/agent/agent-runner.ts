@@ -11,7 +11,6 @@ import {
   ToolCallEngine,
   ToolCallEngineType,
   AgentContextAwarenessOptions,
-  TConstructor,
 } from '@tarko/agent-interface';
 import { ToolManager } from './tool-manager';
 import { AgentModel, LLMReasoningOptions } from '@tarko/model-provider';
