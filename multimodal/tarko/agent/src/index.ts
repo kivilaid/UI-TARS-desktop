@@ -20,7 +20,7 @@ export { getLogger, LogLevel, ConsoleLogger } from '@tarko/shared-utils';
 export * from './utils';
 
 export { resolveModel } from '@tarko/model-provider';
-export type { ResolvedModel } from '@tarko/model-provider';
+export type { AgentModel } from '@tarko/model-provider';
 
 // Export constructor type for convenience
 export type { TConstructor } from '@tarko/agent-interface';

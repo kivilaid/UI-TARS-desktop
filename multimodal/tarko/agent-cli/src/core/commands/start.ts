@@ -64,7 +64,7 @@ export async function startInteractiveWebUI(
     const brandGradient = gradient(brandColor1, brandColor2);
     const workspaceDir = toUserFriendlyPath(server.getCurrentWorkspace());
     const provider = appConfig.model?.provider;
-    const modelId = appConfig.model?.id;
+    const modelId = appConfig.model?.model;
 
     const boxContent = [
       `🎉 ${chalk.underline(chalk.bgBlue(` ${chalk.bold(server.getCurrentAgentName())} `))}` +

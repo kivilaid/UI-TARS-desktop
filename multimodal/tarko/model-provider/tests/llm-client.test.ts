@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createLLMClient } from '../src/llm-client';
-import { ResolvedModel } from '../src/types';
+import { AgentModel } from '../src/types';
 
 // Mock the TokenJS client
 vi.mock('@tarko/llm-client', () => {
@@ -21,7 +21,7 @@ vi.mock('@tarko/llm-client', () => {
 });
 
 describe('createLLMClient', () => {
-  let resolvedModel: ResolvedModel;
+  let resolvedModel: AgentModel;
 
   beforeEach(() => {
     resolvedModel = {
@@ -49,7 +49,7 @@ describe('createLLMClient', () => {
   });
 
   it('should handle extended providers correctly', async () => {
-    const ollamaModel: ResolvedModel = {
+    const ollamaModel: AgentModel = {
       provider: 'ollama',
       model: 'llama3',
       baseURL: 'http://localhost:11434/v1',

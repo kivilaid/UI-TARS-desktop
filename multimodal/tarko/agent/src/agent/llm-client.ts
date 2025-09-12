@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { getLogger } from '@tarko/shared-utils';
-import { ResolvedModel } from '@tarko/model-provider';
-import { createLLMClient, LLMReasoningOptions, LLMRequest } from '@tarko/model-provider';
+import { AgentModel, LLMRequestInterceptor } from '@tarko/model-provider';
+import { createLLMClient, LLMReasoningOptions } from '@tarko/model-provider';
 
 const logger = getLogger('ModelProvider');
 
@@ -17,16 +17,16 @@ const logger = getLogger('ModelProvider');
  * @returns OpenAI-compatible client
  */
 export function getLLMClient(
-  resolvedModel: ResolvedModel,
+  resolvedModel: AgentModel,
   reasoningOptions: LLMReasoningOptions,
-  requestInterceptor?: (provider: string, request: LLMRequest, baseURL?: string) => any,
+  requestInterceptor?: LLMRequestInterceptor,
 ) {
-  const { provider, id, actualProvider, baseURL } = resolvedModel;
+  const { provider, model, baseProvider, baseURL } = resolvedModel;
 
   logger.info(`Creating LLM client: 
 - Provider: ${provider} 
-- Model: ${id} 
-- Actual Provider: ${actualProvider} 
+- Model: ${model} 
+- Actual Provider: ${baseProvider} 
 - Base URL: ${baseURL || 'default'} 
 `);
 

@@ -145,7 +145,7 @@ describe('Agent', () => {
 
     it('should handle initial resolved model correctly', () => {
       // Initially, no resolved model should be available
-      expect(agent.getCurrentResolvedModel()).toMatchInlineSnapshot(`
+      expect(agent.getCurrentModel()).toMatchInlineSnapshot(`
         {
           "actualProvider": "openai",
           "apiKey": undefined,

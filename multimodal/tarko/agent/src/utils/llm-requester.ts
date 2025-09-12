@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { resolveModel, ResolvedModel, AgentModel } from '@tarko/model-provider';
+import { resolveModel, AgentModel, Model } from '@tarko/model-provider';
 import { LLMRequestHookPayload } from '@tarko/agent-interface';
 import { getLogger } from '@tarko/shared-utils';
 import { getLLMClient } from '../agent';
@@ -15,27 +15,15 @@ const logger = getLogger('LLMRequester');
 /**
  * Options for LLM request
  */
-export interface LLMRequestOptions {
+export interface LLMRequestOptions extends Model {
   /**
    * Provider name
    */
   provider: string;
   /**
-   * Model name
-   */
-  model: string;
-  /**
    * Path to the request body JSON file or JSON string
    */
   body: string;
-  /**
-   * API key (optional)
-   */
-  apiKey?: string;
-  /**
-   * Base URL (optional)
-   */
-  baseURL?: string;
   /**
    * Whether to use streaming mode
    */
@@ -57,8 +45,8 @@ export class LLMRequester {
     const { provider, model, body, apiKey, baseURL, stream = false } = options;
 
     const agentModel: AgentModel = {
-      provider: provider as ResolvedModel['provider'],
-      id: model,
+      provider: provider as AgentModel['provider'],
+      model,
       baseURL,
       apiKey,
     };

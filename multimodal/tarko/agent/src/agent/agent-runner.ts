@@ -14,7 +14,7 @@ import {
   TConstructor,
 } from '@tarko/agent-interface';
 import { ToolManager } from './tool-manager';
-import { ResolvedModel, LLMReasoningOptions } from '@tarko/model-provider';
+import { AgentModel, LLMReasoningOptions } from '@tarko/model-provider';
 import { getLogger } from '@tarko/shared-utils';
 import type { Agent } from './agent';
 import {
@@ -177,7 +177,7 @@ export class AgentRunner {
    */
   private handleError(
     error: unknown,
-    resolvedModel: ResolvedModel,
+    resolvedModel: AgentModel,
     sessionId: string,
     abortSignal?: AbortSignal,
   ): AgentEventStream.AssistantMessageEvent {
@@ -235,7 +235,7 @@ export class AgentRunner {
    */
   async execute(
     runOptions: AgentRunObjectOptions,
-    resolvedModel: ResolvedModel,
+    resolvedModel: AgentModel,
     sessionId: string,
   ): Promise<AgentEventStream.AssistantMessageEvent> {
     // Resolve which model and provider to use
@@ -243,7 +243,7 @@ export class AgentRunner {
 
     this.logger.info(
       `[Session] Execution started | SessionId: "${sessionId}" | ` +
-        `Provider: "${resolvedModel.provider}" | Model: "${resolvedModel.id}" | ` +
+        `Provider: "${resolvedModel.provider}" | Model: "${resolvedModel.model}" | ` +
         `Mode: non-streaming`,
     );
 
@@ -298,7 +298,7 @@ export class AgentRunner {
    */
   async executeStreaming(
     runOptions: AgentRunStreamingOptions,
-    resolvedModel: ResolvedModel,
+    resolvedModel: AgentModel,
     sessionId: string,
   ): Promise<AsyncIterable<AgentEventStream.Event>> {
     // Resolve which model and provider to use
@@ -306,7 +306,7 @@ export class AgentRunner {
 
     this.logger.info(
       `[Session] Execution started | SessionId: "${sessionId}" | ` +
-        `Provider: "${resolvedModel.provider}" | Model: "${resolvedModel.id}" | ` +
+        `Provider: "${resolvedModel.provider}" | Model: "${resolvedModel.model}" | ` +
         `Mode: streaming`,
     );
 

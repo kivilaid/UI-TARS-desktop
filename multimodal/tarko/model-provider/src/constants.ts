@@ -12,24 +12,24 @@ import { ProviderConfig } from './types';
 export const MODEL_PROVIDER_CONFIGS: readonly ProviderConfig[] = [
   {
     name: 'ollama',
-    actual: 'openai',
+    extends: 'openai',
     baseURL: 'http://127.0.0.1:11434/v1',
     apiKey: 'ollama',
   },
   {
     name: 'lm-studio',
-    actual: 'openai',
+    extends: 'openai',
     baseURL: 'http://127.0.0.1:1234/v1',
     apiKey: 'lm-studio',
   },
   {
     name: 'volcengine',
-    actual: 'openai',
+    extends: 'openai',
     baseURL: 'https://ark.cn-beijing.volces.com/api/v3',
   },
   {
     name: 'deepseek',
-    actual: 'openai',
+    extends: 'openai',
     baseURL: 'https://api.deepseek.com/v1',
   },
 ] as const;

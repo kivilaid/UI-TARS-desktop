@@ -3,20 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  AgentModel,
-  ModelProviderName,
-  ResolvedModel,
-  ActualModelProviderName,
-} from './types';
+import { AgentModel, ModelProviderName, BaseModelProviderName } from './types';
 import { MODEL_PROVIDER_CONFIGS } from './constants';
 
 /**
  * Get the actual provider implementation name
  */
-function getActualProvider(providerName: ModelProviderName): ActualModelProviderName {
+function getActualProvider(providerName: ModelProviderName): BaseModelProviderName {
   const config = MODEL_PROVIDER_CONFIGS.find((c) => c.name === providerName);
-  return (config?.actual || providerName) as ActualModelProviderName;
+  return (config?.extends || providerName) as BaseModelProviderName;
 }
 
 /**
@@ -28,6 +23,7 @@ function getDefaultConfig(providerName: ModelProviderName) {
 
 /**
  * Resolves the model configuration based on run options and defaults
+ * FIXME: Remove `runModel`.
  *
  * @param agentModel - Default model configuration from agent options
  * @param runModel - Model specified in run options (optional)
@@ -38,14 +34,14 @@ export function resolveModel(
   agentModel?: AgentModel,
   runModel?: string,
   runProvider?: ModelProviderName,
-): ResolvedModel {
+): AgentModel {
   // Start with runtime parameters, fall back to agent model configuration
   const provider = runProvider || agentModel?.provider || 'openai';
-  const model = runModel || agentModel?.id || 'gpt-4o';
-  
+  const model = runModel || agentModel?.model || 'gpt-4o';
+
   let baseURL = agentModel?.baseURL;
   let apiKey = agentModel?.apiKey;
-  let displayName = agentModel?.displayName;
+  const displayName = agentModel?.displayName;
 
   // Apply default configuration from constants if missing
   const defaultConfig = getDefaultConfig(provider);
@@ -56,34 +52,10 @@ export function resolveModel(
 
   return {
     provider,
-    id: model,
+    model,
     displayName,
     baseURL,
     apiKey,
-    actualProvider: getActualProvider(provider),
+    baseProvider: getActualProvider(provider),
   };
-}
-
-/**
- * Legacy ModelResolver class for backward compatibility
- * @deprecated Use resolveModel function instead
- */
-export class ModelResolver {
-  private readonly agentModel?: AgentModel;
-
-  constructor(agentModel?: AgentModel) {
-    this.agentModel = agentModel;
-  }
-
-  resolve(runModel?: string, runProvider?: ModelProviderName): ResolvedModel {
-    return resolveModel(this.agentModel, runModel, runProvider);
-  }
-
-  getDefaultSelection(): AgentModel {
-    return this.agentModel || {};
-  }
-
-  getAllProviders(): never[] {
-    return [];
-  }
 }

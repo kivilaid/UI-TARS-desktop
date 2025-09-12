@@ -31,7 +31,7 @@ import { AgentEventStreamProcessor } from './event-stream';
 import { ToolManager } from './tool-manager';
 import {
   resolveModel,
-  ResolvedModel,
+  AgentModel,
   OpenAI,
   RequestOptions,
   ChatCompletionChunk,
@@ -74,8 +74,7 @@ export class Agent<T extends AgentOptions = AgentOptions>
   private customLLMClient?: OpenAI;
   public initialized = false;
   public isReplaySnapshot = false;
-  private currentResolvedModel?: ResolvedModel;
-  private isCustomLLMClientSet = false; // Track if custom client was explicitly set
+  private currentModel: AgentModel;
   private executionStartTime = 0; // Track execution start time
 
   /**
@@ -92,6 +91,7 @@ export class Agent<T extends AgentOptions = AgentOptions>
     this.maxTokens = options.maxTokens;
     this.name = options.name ?? 'Anonymous';
     this.id = options.id ?? '@tarko/agent';
+    this.currentModel = resolveModel(options.model);
 
     // console.log(JSON.stringify(options, null, 2));
 
@@ -122,12 +122,13 @@ export class Agent<T extends AgentOptions = AgentOptions>
       });
     }
 
+    // FIXME: remove this log.
     // Log the default model configuration
     const defaultModel = this.options.model;
-    if (defaultModel?.provider || defaultModel?.id) {
+    if (defaultModel?.provider || defaultModel?.model) {
       this.logger.info(
         `[Agent] ${this.name} initialized | Default model provider: ${defaultModel.provider ?? 'N/A'} | ` +
-          `Default model: ${defaultModel.id ?? 'N/A'} | ` +
+          `Default model: ${defaultModel.model ?? 'N/A'} | ` +
           `Tools: ${options.tools?.length || 0} | Max iterations: ${this.maxIterations}`,
       );
     }
@@ -145,9 +146,6 @@ export class Agent<T extends AgentOptions = AgentOptions>
     } else {
       this.reasoningOptions = { type: 'disabled' };
     }
-
-    // Initialize the resolved model early if possible
-    this.initializeEarlyResolvedModel();
 
     // Initialize the runner with context options and streaming tool call settings
     this.runner = new AgentRunner({
@@ -171,35 +169,13 @@ export class Agent<T extends AgentOptions = AgentOptions>
   }
 
   /**
-   * Initialize early resolved model if model configuration is available
-   * This allows LLM client to be available immediately after instantiation
-   */
-  private initializeEarlyResolvedModel(): void {
-    try {
-      // Try to resolve with default model configuration
-      this.currentResolvedModel = resolveModel(this.options.model);
-
-      if (this.currentResolvedModel) {
-        this.logger.info(
-          `[Agent] Early model resolution successful | Provider: ${this.currentResolvedModel.provider} | Model: ${this.currentResolvedModel.id}`,
-        );
-      }
-    } catch (error) {
-      this.logger.debug(`[Agent] Early model resolution failed, will resolve during run: ${error}`);
-      // Not a critical error - model will be resolved during run
-    }
-  }
-
-  /**
    * Custom LLM client for testing or custom implementations
    *
    * @param customLLMClient - OpenAI-compatible llm client
    */
   public setCustomLLMClient(client: OpenAI): void {
     this.customLLMClient = client;
-    this.isCustomLLMClientSet = true;
     this.runner.llmProcessor.setCustomLLMClient(client);
-
     this.logger.info('[Agent] Custom LLM client set, will ignore model parameters in run()');
   }
 
@@ -336,27 +312,12 @@ Provide concise and accurate responses.`;
         normalizedOptions.sessionId ??
         `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
-      // Resolve model before running
-      // If custom LLM client is set, ignore model parameters and use existing resolved model
-      if (this.isCustomLLMClientSet && this.currentResolvedModel) {
-        this.logger.info(
-          `[Agent] Using existing resolved model with custom LLM client | Provider: ${this.currentResolvedModel.provider} | Model: ${this.currentResolvedModel.id}`,
-        );
-      } else {
-        // Normal model resolution
-        this.currentResolvedModel = resolveModel(
-          this.options.model,
-          normalizedOptions.model,
-          normalizedOptions.provider,
-        );
-      }
-
       // Determine the best tool call engine based on the provider if not explicitly specified
       if (!this.options.toolCallEngine && !normalizedOptions.toolCallEngine) {
-        const providerEngine = getToolCallEngineForProvider(this.currentResolvedModel.provider);
+        const providerEngine = getToolCallEngineForProvider(this.currentModel.provider);
         normalizedOptions.toolCallEngine = providerEngine;
         this.logger.info(
-          `[Agent] Auto-selected tool call engine "${providerEngine}" for provider "${this.currentResolvedModel.provider}"`,
+          `[Agent] Auto-selected tool call engine "${providerEngine}" for provider "${this.currentModel.provider}"`,
         );
       }
 
@@ -364,9 +325,9 @@ Provide concise and accurate responses.`;
       const runStartEvent = this.eventStream.createEvent('agent_run_start', {
         sessionId,
         runOptions: this.sanitizeRunOptions(normalizedOptions),
-        provider: this.currentResolvedModel.provider,
-        model: this.currentResolvedModel.id,
-        modelDisplayName: this.currentResolvedModel.displayName,
+        provider: this.currentModel.provider,
+        model: this.currentModel.model,
+        modelDisplayName: this.currentModel.displayName,
         agentName: this.name,
       });
 
@@ -378,7 +339,7 @@ Provide concise and accurate responses.`;
         // Execute in streaming mode - we return the stream directly but also need to handle cleanup
         const stream = this.runner.executeStreaming(
           normalizedOptions,
-          this.currentResolvedModel,
+          this.currentModel,
           sessionId,
         );
 
@@ -443,11 +404,7 @@ Provide concise and accurate responses.`;
 
         // Execute in non-streaming mode
         try {
-          const result = await this.runner.execute(
-            normalizedOptions,
-            this.currentResolvedModel,
-            sessionId,
-          );
+          const result = await this.runner.execute(normalizedOptions, this.currentModel, sessionId);
 
           // Add agent run end event
           const endEvent = this.eventStream.createEvent('agent_run_end', {
@@ -521,9 +478,9 @@ Provide concise and accurate responses.`;
     }
 
     // If no client exists yet but we have a resolved model, create one
-    if (this.currentResolvedModel) {
+    if (this.currentModel) {
       try {
-        const newClient = getLLMClient(this.currentResolvedModel, this.reasoningOptions);
+        const newClient = getLLMClient(this.currentModel, this.reasoningOptions);
 
         // Set it to the runner so it's available for future calls
         if (this.runner?.llmProcessor) {
@@ -554,8 +511,8 @@ Provide concise and accurate responses.`;
     }
 
     // Use current resolved model if available, otherwise resolve based on request
-    const resolvedModel =
-      this.currentResolvedModel || resolveModel(this.options.model, request.model, request.provider);
+    const agentModel =
+      this.currentModel || resolveModel(this.options.model, request.model, request.provider);
 
     // Create a system message to instruct the model
     const systemMessage: ChatCompletionMessageParam = {
@@ -571,7 +528,7 @@ Provide concise and accurate responses.`;
       // Call the LLM with the prepared messages
       const response = await llmClient.chat.completions.create(
         {
-          model: resolvedModel.id,
+          model: agentModel.model,
           messages,
           temperature: 0.3, // Lower temperature for more focused summaries
 
@@ -593,15 +550,15 @@ Provide concise and accurate responses.`;
 
         return {
           summary,
-          model: resolvedModel.id,
-          provider: resolvedModel.provider,
+          model: agentModel.model,
+          provider: agentModel.provider,
         };
       } catch (jsonError) {
         this.logger.warn(`Failed to parse JSON response: ${content}`);
         return {
           summary: 'Untitled Conversation',
-          model: resolvedModel.id,
-          provider: resolvedModel.provider,
+          model: agentModel.model,
+          provider: agentModel.provider,
         };
       }
     } catch (error) {
@@ -618,8 +575,8 @@ Provide concise and accurate responses.`;
    *
    * @returns The current resolved model configuration or undefined if not set
    */
-  public getCurrentResolvedModel(): ResolvedModel | undefined {
-    return this.currentResolvedModel;
+  public getCurrentModel(): AgentModel {
+    return this.currentModel;
   }
 
   /**
@@ -698,8 +655,8 @@ Provide concise and accurate responses.`;
       );
     }
 
-    const resolvedModel = this.getCurrentResolvedModel();
-    if (!resolvedModel) {
+    const agentModel = this.getCurrentModel();
+    if (!agentModel) {
       throw new Error(
         'Resolved model is not available. Make sure the agent has been run at least once or a valid model configuration is provided.',
       );
@@ -708,7 +665,7 @@ Provide concise and accurate responses.`;
     // Merge the resolved model ID with the provided parameters
     const completeParams: ChatCompletionCreateParams = {
       ...params,
-      model: resolvedModel.id,
+      model: agentModel.model,
     };
 
     // Call the LLM with the complete parameters

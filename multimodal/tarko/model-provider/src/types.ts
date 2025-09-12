@@ -9,15 +9,15 @@ import type { models } from '@tarko/llm-client';
 export * from './third-party';
 
 /**
- * The actual underlying model provider
+ * The base underlying model provider
  */
-export type ActualModelProviderName = keyof typeof models;
+export type BaseModelProviderName = keyof typeof models;
 
 /**
  * All Model Providers, including some providers that align with OpenAI compatibility
  */
 export type ModelProviderName =
-  | ActualModelProviderName
+  | BaseModelProviderName
   | 'ollama'
   | 'lm-studio'
   | 'volcengine'
@@ -25,8 +25,10 @@ export type ModelProviderName =
 
 /**
  * Model provider basic configuration
+ *
+ * Shared between Agent and LLM.
  */
-interface ModelBasicConfig {
+export interface Model {
   /**
    * Provider's API key
    */
@@ -35,6 +37,10 @@ interface ModelBasicConfig {
    * Provider's base URL
    */
   baseURL?: string;
+  /**
+   * Model identifier
+   */
+  model: string;
 }
 
 /**
@@ -42,49 +48,19 @@ interface ModelBasicConfig {
  *
  * Used for Agent Kernel.
  */
-export interface AgentModel extends ModelBasicConfig {
+export interface AgentModel extends Model {
   /**
    * Provider name
    */
-  provider?: ModelProviderName;
+  provider: ModelProviderName;
   /**
-   * Model identifier
+   * Base provider name
    */
-  id?: string;
+  baseProvider?: BaseModelProviderName;
   /**
    * Display name for the model
    */
   displayName?: string;
-}
-
-/**
- * Result of model resolution containing all necessary configuration
- */
-export interface ResolvedModel {
-  /**
-   * The public provider name
-   */
-  provider: ModelProviderName;
-  /**
-   * The model identifier for LLM requests
-   */
-  id: string;
-  /**
-   * Display name for the model (fallback to id if not provided)
-   */
-  displayName?: string;
-  /**
-   * Base URL for the provider API
-   */
-  baseURL?: string;
-  /**
-   * API key for authentication
-   */
-  apiKey?: string;
-  /**
-   * The actual implementation provider name
-   */
-  actualProvider: ActualModelProviderName;
 }
 
 /**
@@ -96,9 +72,9 @@ export interface ProviderConfig {
    */
   name: ModelProviderName;
   /**
-   * The actual implementation provider name
+   * The base implementation provider name
    */
-  actual: ActualModelProviderName;
+  extends: BaseModelProviderName;
   /**
    * Default base URL
    */

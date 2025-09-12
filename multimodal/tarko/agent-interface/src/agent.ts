@@ -27,7 +27,7 @@ import {
   ChatCompletionChunk,
 } from '@tarko/model-provider/types';
 import { ToolCallResult } from './tool-call-engine';
-import { ResolvedModel } from '@tarko/model-provider';
+import { AgentModel } from '@tarko/model-provider';
 import { AgentEventStream } from './agent-event-stream';
 import { Tool } from './tool';
 
@@ -134,7 +134,7 @@ export interface IAgent<T extends AgentOptions = AgentOptions> {
    *
    * @returns The current resolved model configuration or undefined if not set
    */
-  getCurrentResolvedModel(): ResolvedModel | undefined;
+  getCurrentModel(): AgentModel | undefined;
 
   /**
    * Hook called before sending a request to the LLM

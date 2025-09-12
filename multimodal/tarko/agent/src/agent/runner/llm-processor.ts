@@ -19,7 +19,7 @@ import {
   Tool,
 } from '@tarko/agent-interface';
 import {
-  ResolvedModel,
+  AgentModel,
   LLMReasoningOptions,
   OpenAI,
   ChatCompletionMessageToolCall,
@@ -92,7 +92,7 @@ export class LLMProcessor {
    * @param abortSignal Optional signal to abort the execution
    */
   async processRequest(
-    resolvedModel: ResolvedModel,
+    resolvedModel: AgentModel,
     systemPrompt: string,
     toolCallEngine: ToolCallEngine,
     sessionId: string,
@@ -195,11 +195,11 @@ export class LLMProcessor {
       finalTools,
     );
 
-    this.logger.info(`[LLM] Requesting ${resolvedModel.provider}/${resolvedModel.id}`);
+    this.logger.info(`[LLM] Requesting ${resolvedModel.provider}/${resolvedModel.model}`);
 
     // Prepare request context with final tools
     const prepareRequestContext: ToolCallEnginePrepareRequestContext = {
-      model: resolvedModel.id,
+      model: resolvedModel.model,
       messages,
       tools: finalTools,
       temperature: this.temperature,
@@ -229,7 +229,7 @@ export class LLMProcessor {
    * Send the actual request to the LLM and process the response
    */
   private async sendRequest(
-    resolvedModel: ResolvedModel,
+    resolvedModel: AgentModel,
     context: ToolCallEnginePrepareRequestContext,
     sessionId: string,
     toolCallEngine: ToolCallEngine,
@@ -253,7 +253,7 @@ export class LLMProcessor {
 
     // Use either the custom LLM client or create one using model resolver
     this.logger.info(
-      `[LLM] Sending streaming request to ${resolvedModel.provider} | ${resolvedModel.id} | SessionId: ${sessionId}`,
+      `[LLM] Sending streaming request to ${resolvedModel.provider} | ${resolvedModel.model} | SessionId: ${sessionId}`,
     );
 
     // Make the streaming request with abort signal if available
@@ -279,7 +279,7 @@ export class LLMProcessor {
    */
   private async handleStreamingResponse(
     stream: AsyncIterable<ChatCompletionChunk>,
-    resolvedModel: ResolvedModel,
+    resolvedModel: AgentModel,
     sessionId: string,
     toolCallEngine: ToolCallEngine,
     streamingMode: boolean,
@@ -463,7 +463,7 @@ export class LLMProcessor {
           },
         ],
         created: Date.now(),
-        model: resolvedModel.id,
+        model: resolvedModel.model,
         object: 'chat.completion',
       } as ChatCompletion,
     });

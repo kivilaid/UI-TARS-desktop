@@ -62,7 +62,7 @@ export function logConfigComplete(config: AgentAppConfig, isDebug = false) {
   // Log key configuration settings in debug mode
   if (config.model?.provider) {
     logger.debug(
-      `Model: ${config.model.provider}${config.model.id ? ` (${config.model.id})` : ''}`,
+      `Model: ${config.model.provider}${config.model.model ? ` (${config.model.model})` : ''}`,
     );
   }
 

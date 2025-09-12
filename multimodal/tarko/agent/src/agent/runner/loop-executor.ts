@@ -5,7 +5,7 @@
 
 import { AgentEventStream, ToolCallEngine, EachAgentLoopEndContext } from '@tarko/agent-interface';
 import { getLogger } from '@tarko/shared-utils';
-import { ResolvedModel } from '@tarko/model-provider';
+import { AgentModel } from '@tarko/model-provider';
 import { LLMProcessor } from './llm-processor';
 import { ToolProcessor } from './tool-processor';
 import type { Agent } from '../agent';
@@ -48,7 +48,7 @@ export class LoopExecutor {
    * @returns The final assistant message event
    */
   async executeLoop(
-    resolvedModel: ResolvedModel,
+    resolvedModel: AgentModel,
     sessionId: string,
     toolCallEngine: ToolCallEngine,
     streamingMode = false,
