@@ -147,10 +147,8 @@ function handleCoreDeprecatedOptions(
   // Handle deprecated model configuration
   if (provider || deprecatedApiKey || baseURL) {
     config.model = {
-      // @ts-expect-error
-      model: typeof config.model === 'string' ? config.model : config.model?.model,
-      // @ts-expect-error
-      provider: config.model?.provider ?? provider,
+      model: (typeof config.model === 'string' ? config.model : config.model?.model)!,
+      provider: (config.model?.provider ?? provider) as ModelProviderName,
       apiKey: config.model?.apiKey ?? deprecatedApiKey,
       baseURL: config.model?.baseURL ?? baseURL,
     };
