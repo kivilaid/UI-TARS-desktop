@@ -43,7 +43,7 @@ function getModelConfig(): AgentModel {
   return {
     provider: 'openai-non-streaming',
     baseURL: env.ARK_BASE_URL!,
-    model: env.ARK_MODEL!,
+    id: env.ARK_MODEL!,
     apiKey: env.ARK_API_KEY!, // secretlint-disable-line
   };
 }
@@ -87,7 +87,7 @@ async function runWithOperator(
     model: {
       provider: 'openai-non-streaming',
       baseURL: modelConfig.baseURL,
-      model: modelConfig.model!, // 注意这里是model而不是id
+      id: modelConfig.model!, // 注意这里是model而不是id
       apiKey: modelConfig.apiKey, // secretlint-disable-line
     },
     uiTarsVersion: 'latest',
@@ -198,7 +198,7 @@ async function testComputerOperator() {
     model: {
       provider: getModelConfig().provider,
       baseURL: getModelConfig().baseURL,
-      model: getModelConfig().model,
+      id: getModelConfig().id,
       apiKey: getModelConfig().apiKey, // secretlint-disable-line
     },
     uiTarsVersion: 'latest',

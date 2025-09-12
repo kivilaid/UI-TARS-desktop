@@ -125,10 +125,10 @@ export class Agent<T extends AgentOptions = AgentOptions>
     // FIXME: remove this log.
     // Log the default model configuration
     const defaultModel = this.options.model;
-    if (defaultModel?.provider || defaultModel?.model) {
+    if (defaultModel?.provider || defaultModel?.id) {
       this.logger.info(
         `[Agent] ${this.name} initialized | Default model provider: ${defaultModel.provider ?? 'N/A'} | ` +
-          `Default model: ${defaultModel.model ?? 'N/A'} | ` +
+          `Default model: ${defaultModel.id ?? 'N/A'} | ` +
           `Tools: ${options.tools?.length || 0} | Max iterations: ${this.maxIterations}`,
       );
     }
@@ -326,7 +326,7 @@ Provide concise and accurate responses.`;
         sessionId,
         runOptions: this.sanitizeRunOptions(normalizedOptions),
         provider: this.currentModel.provider,
-        model: this.currentModel.model,
+        model: this.currentModel.id,
         modelDisplayName: this.currentModel.displayName,
         agentName: this.name,
       });
@@ -528,7 +528,7 @@ Provide concise and accurate responses.`;
       // Call the LLM with the prepared messages
       const response = await llmClient.chat.completions.create(
         {
-          model: agentModel.model,
+          model: agentModel.id,
           messages,
           temperature: 0.3, // Lower temperature for more focused summaries
 
@@ -550,14 +550,14 @@ Provide concise and accurate responses.`;
 
         return {
           summary,
-          model: agentModel.model,
+          model: agentModel.id,
           provider: agentModel.provider,
         };
       } catch (jsonError) {
         this.logger.warn(`Failed to parse JSON response: ${content}`);
         return {
           summary: 'Untitled Conversation',
-          model: agentModel.model,
+          model: agentModel.id,
           provider: agentModel.provider,
         };
       }
@@ -665,7 +665,7 @@ Provide concise and accurate responses.`;
     // Merge the current model ID with the provided parameters
     const completeParams: ChatCompletionCreateParams = {
       ...params,
-      model: agentModel.model,
+      model: agentModel.id,
     };
 
     // Call the LLM with the complete parameters

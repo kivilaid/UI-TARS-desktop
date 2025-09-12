@@ -37,10 +37,6 @@ export interface Model {
    * Provider's base URL
    */
   baseURL?: string;
-  /**
-   * Model identifier
-   */
-  model: string;
 }
 
 /**
@@ -48,17 +44,21 @@ export interface Model {
  */
 export interface AgentModel extends Model {
   /**
-   * High-lelvel Provider name
+   * Model identifier
+   */
+  id: string;
+  /**
+   * High-level Provider name
    */
   provider: ModelProviderName;
-  /**
-   * Base provider name
-   */
-  baseProvider?: BaseModelProviderName;
   /**
    * Display name for the model
    */
   displayName?: string;
+  /**
+   * Base provider name
+   */
+  baseProvider?: BaseModelProviderName;
 }
 
 /**

@@ -37,7 +37,7 @@ export function resolveModel(
 ): AgentModel {
   // Start with runtime parameters, fall back to agent model configuration
   const provider = runProvider || agentModel?.provider || 'openai';
-  const model = runModel || agentModel?.model || 'gpt-4o';
+  const model = runModel || agentModel?.id || 'gpt-4o';
 
   let baseURL = agentModel?.baseURL;
   let apiKey = agentModel?.apiKey;
@@ -52,7 +52,7 @@ export function resolveModel(
 
   return {
     provider,
-    model,
+    id: model,
     displayName,
     baseURL,
     apiKey,

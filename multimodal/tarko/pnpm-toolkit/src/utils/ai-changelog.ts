@@ -3,7 +3,6 @@ import { execa } from 'execa';
 import { logger } from './logger';
 import { AgentModel } from '@tarko/model-provider';
 
-// Types for AI-generated changelog
 interface CommitEntry {
   hash: string;
   author: string;
@@ -186,7 +185,7 @@ Provide a concise, professional changelog in JSON format with the following stru
 
     // Call LLM with JSON mode
     const response = await llm.chat.completions.create({
-      model: this.model.model,
+      model: this.model.id,
       messages: [
         {
           role: 'system',

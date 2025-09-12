@@ -195,11 +195,11 @@ export class LLMProcessor {
       finalTools,
     );
 
-    this.logger.info(`[LLM] Requesting ${currentModel.provider}/${currentModel.model}`);
+    this.logger.info(`[LLM] Requesting ${currentModel.provider}/${currentModel.id}`);
 
     // Prepare request context with final tools
     const prepareRequestContext: ToolCallEnginePrepareRequestContext = {
-      model: currentModel.model,
+      model: currentModel.id,
       messages,
       tools: finalTools,
       temperature: this.temperature,
@@ -253,7 +253,7 @@ export class LLMProcessor {
 
     // Use either the custom LLM client or create one using model resolver
     this.logger.info(
-      `[LLM] Sending streaming request to ${currentModel.provider} | ${currentModel.model} | SessionId: ${sessionId}`,
+      `[LLM] Sending streaming request to ${currentModel.provider} | ${currentModel.id} | SessionId: ${sessionId}`,
     );
 
     // Make the streaming request with abort signal if available
@@ -463,7 +463,7 @@ export class LLMProcessor {
           },
         ],
         created: Date.now(),
-        model: currentModel.model,
+        model: currentModel.id,
         object: 'chat.completion',
       } as ChatCompletion,
     });

@@ -17,6 +17,10 @@ const logger = getLogger('LLMRequester');
  */
 export interface LLMRequestOptions extends Model {
   /**
+   * Model name
+   */
+  model: string;
+  /**
    * Provider name
    */
   provider: string;
@@ -46,7 +50,7 @@ export class LLMRequester {
 
     const agentModel: AgentModel = {
       provider: provider as AgentModel['provider'],
-      model,
+      id: model,
       baseURL,
       apiKey,
     };

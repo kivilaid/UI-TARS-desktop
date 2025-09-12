@@ -28,7 +28,7 @@ export function createLLMClient(
   agentModel: AgentModel,
   requestInterceptor?: LLMRequestInterceptor,
 ): OpenAI {
-  const { provider, model, baseProvider, baseURL, apiKey } = agentModel;
+  const { provider, id, baseProvider, baseURL, apiKey } = agentModel;
 
   const client = new TokenJS({
     apiKey,
@@ -38,7 +38,7 @@ export function createLLMClient(
   // Add extended model support for non-native providers
   if (baseProvider && !NATIVE_PROVIDERS.has(baseProvider)) {
     // @ts-expect-error FIXME: support custom provider.
-    client.extendModelList(baseProvider, model, {
+    client.extendModelList(baseProvider, id, {
       streaming: true,
       json: true,
       toolCalls: true,
@@ -54,7 +54,7 @@ export function createLLMClient(
           const requestPayload = {
             ...params,
             provider,
-            model,
+            model: id,
           };
 
           const finalRequest = requestInterceptor

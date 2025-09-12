@@ -17,7 +17,7 @@ async function main() {
     },
     model: {
       provider: 'azure-openai',
-      id: 'aws_sdk_claude37_sonnet',
+      model: 'aws_sdk_claude37_sonnet',
     },
     toolCallEngine: 'prompt_engineering',
   });

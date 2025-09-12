@@ -360,7 +360,7 @@ export async function changelog(options: ChangelogOptions = {}): Promise<void> {
     logger.info(`Generating changelog for ${version} using AI...`);
     const generator = new AIChangelogGenerator(cwd, tagPrefix, {
       provider: provider as ModelProviderName,
-      model,
+      id: model,
       apiKey,
       baseURL,
     });

@@ -147,7 +147,7 @@ function handleCoreDeprecatedOptions(
   // Handle deprecated model configuration
   if (provider || deprecatedApiKey || baseURL) {
     config.model = {
-      model: (typeof config.model === 'string' ? config.model : config.model?.model)!,
+      id: (typeof config.model === 'string' ? config.model : config.model?.id)!,
       provider: (config.model?.provider ?? provider) as ModelProviderName,
       apiKey: config.model?.apiKey ?? deprecatedApiKey,
       baseURL: config.model?.baseURL ?? baseURL,

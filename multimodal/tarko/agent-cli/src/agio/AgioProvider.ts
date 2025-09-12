@@ -92,12 +92,12 @@ export class AgioProvider implements AgioEvent.AgioProvider {
     const currentModel = this.agent.getCurrentModel();
     const counts = this.calculateCounts();
 
-    this.modelName = currentModel?.model;
+    this.modelName = currentModel?.id;
 
     const event = AgioEvent.createEvent('agent_initialized', this.sessionId, {
       config: {
         modelProvider: currentModel?.provider,
-        modelName: currentModel?.model,
+        modelName: currentModel?.id,
         toolCallEngine: this.appConfig.toolCallEngine,
         maxTokens: this.appConfig.maxTokens!,
         temperature: this.appConfig.temperature,

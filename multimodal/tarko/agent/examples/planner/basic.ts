@@ -121,7 +121,7 @@ IMPORTANT: You must ALWAYS call the "final_answer" tool once ALL plan steps are 
     try {
       // Request the LLM to create an initial plan with steps
       const response = await llmClient.chat.completions.create({
-        model: agentModel.model,
+        model: agentModel.id,
         response_format: { type: 'json_object' },
         messages: [
           ...messages,
@@ -196,7 +196,7 @@ IMPORTANT: You must ALWAYS call the "final_answer" tool once ALL plan steps are 
     try {
       // Request the LLM to evaluate and update the plan
       const response = await llmClient.chat.completions.create({
-        model: agentModel.model,
+        model: agentModel.id,
         response_format: { type: 'json_object' },
         messages: [
           ...messages,
@@ -283,7 +283,7 @@ IMPORTANT: You must ALWAYS call the "final_answer" tool once ALL plan steps are 
     try {
       // Request the LLM to create a comprehensive report
       const response = await llmClient.chat.completions.create({
-        model: agentModel.model,
+        model: agentModel.id,
         temperature: 0.3, // Lower temperature for more factual reports
         messages: [
           {
