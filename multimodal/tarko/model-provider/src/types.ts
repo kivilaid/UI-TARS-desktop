@@ -24,9 +24,9 @@ export type ModelProviderName =
   | 'deepseek';
 
 /**
- * Model provider serving configuration
+ * Model provider basic configuration
  */
-export interface ModelProviderServingConfig {
+interface ModelBasicConfig {
   /**
    * Provider's API key
    */
@@ -39,58 +39,22 @@ export interface ModelProviderServingConfig {
 
 /**
  * Default model selection configuration
+ *
+ * Used for Agent Kernel.
  */
-export interface ModelDefaultSelection extends ModelProviderServingConfig {
+export interface AgentModel extends ModelBasicConfig {
   /**
-   * Default provider name
+   * Provider name
    */
   provider?: ModelProviderName;
   /**
-   * Default model identifier
-   */
-  id?: string;
-  /**
-   * Display name for the default model
-   */
-  displayName?: string;
-}
-
-/**
- * Model configuration with optional display name
- */
-export interface ModelConfig {
-  /**
    * Model identifier
    */
-  id: string;
+  id?: string;
   /**
    * Display name for the model
    */
   displayName?: string;
-}
-
-/**
- * Model provider configuration
- */
-export interface ModelProvider extends ModelProviderServingConfig {
-  /**
-   * Model provider name
-   */
-  name: ModelProviderName;
-  /**
-   * Provider's supported model identifiers (can be strings or objects with displayName)
-   */
-  models: (string | ModelConfig)[];
-}
-
-/**
- * Configuration options for the model provider
- */
-export interface ProviderOptions extends ModelDefaultSelection {
-  /**
-   * Pre-configured model providers for runtime use
-   */
-  providers?: ModelProvider[];
 }
 
 /**

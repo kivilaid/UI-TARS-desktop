@@ -5,40 +5,36 @@
 
 /**
  * This config is used for internal testing only, DO NOT reply on it.
+ * @deprecated The ModelProvider concept has been simplified. Use AgentModel instead.
  */
-import { ModelProvider } from '../../src';
+import { AgentModel } from '../../src';
 
-export const TEST_MODEL_PROVIDERS: ModelProvider[] = [
+// Legacy test configurations - consider updating to use AgentModel directly
+export const TEST_MODEL_CONFIGS: AgentModel[] = [
   {
-    name: 'volcengine',
+    provider: 'volcengine',
     apiKey: process.env.ARK_API_KEY,
-    models: [
-      'ep-20250510145437-5sxhs', // 'doubao-1.5-thinking-vision-pro',
-    ],
+    id: 'ep-20250510145437-5sxhs', // 'doubao-1.5-thinking-vision-pro'
   },
   {
-    name: 'volcengine',
-    apiKey: process.env.ARK_API_KEY,
-    models: [
-      'ep-20250510145437-5sxhs', // 'doubao-1.5-thinking-vision-pro',
-    ],
-  },
-  {
-    name: 'azure-openai',
+    provider: 'azure-openai',
     baseURL: process.env.AWS_CLAUDE_API_BASE_URL,
-    models: ['aws_sdk_claude37_sonnet'],
+    id: 'aws_sdk_claude37_sonnet',
   },
   {
-    name: 'lm-studio',
-    models: ['qwen2.5-coder-3b-instruct', 'qwen2.5-7b-instruct-1m'],
+    provider: 'lm-studio',
+    id: 'qwen2.5-coder-3b-instruct',
   },
   {
-    name: 'ollama',
-    models: ['qwen3:1.7b'],
+    provider: 'ollama',
+    id: 'qwen3:1.7b',
   },
   {
-    name: 'openai',
+    provider: 'openai',
     baseURL: process.env.OPENAI_API_BASE_URL,
-    models: ['gpt-4o-2024-11-20'],
+    id: 'gpt-4o-2024-11-20',
   },
 ];
+
+// Keep the old export for backward compatibility
+export const TEST_MODEL_PROVIDERS = TEST_MODEL_CONFIGS;

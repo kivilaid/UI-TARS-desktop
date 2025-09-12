@@ -143,30 +143,22 @@ export class AgentServer<T extends AgentAppConfig = AgentAppConfig> {
 
   /**
    * Get currently available model providers
+   * @deprecated The providers concept has been simplified. This method returns empty array.
    */
   getAvailableModels(): Array<{ name: string; models: string[]; baseURL?: string }> {
-    const providers = this.appConfig.model?.providers || [];
-
-    // Convert new format to legacy format for API compatibility
-    return providers.map((provider) => ({
-      name: provider.name,
-      models: provider.models.map((model) => (typeof model === 'string' ? model : model.id)),
-      baseURL: provider.baseURL,
-    }));
+    // With simplified model configuration, we no longer maintain a providers list
+    // Return empty array for backward compatibility
+    return [];
   }
 
   /**
    * Validate if a model configuration is still valid
+   * @deprecated With simplified model configuration, all provider/model combinations are considered valid
    */
   isModelConfigValid(provider: string, modelId: string): boolean {
-    const providers = this.appConfig.model?.providers || [];
-    return providers.some(
-      (p) =>
-        p.name === provider &&
-        p.models.some((model) =>
-          typeof model === 'string' ? model === modelId : model.id === modelId,
-        ),
-    );
+    // With simplified model configuration, we accept any provider/model combination
+    // The actual validation happens during model resolution
+    return true;
   }
 
   /**

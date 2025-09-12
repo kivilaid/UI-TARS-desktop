@@ -30,7 +30,7 @@ import { AgentRunner } from './agent-runner';
 import { AgentEventStreamProcessor } from './event-stream';
 import { ToolManager } from './tool-manager';
 import {
-  ModelResolver,
+  resolveModel,
   ResolvedModel,
   OpenAI,
   RequestOptions,
@@ -64,7 +64,7 @@ export class Agent<T extends AgentOptions = AgentOptions>
   protected id: string;
   protected eventStream: AgentEventStreamProcessor;
   private toolManager: ToolManager;
-  private modelResolver: ModelResolver;
+  // Removed modelResolver - using simple resolveModel function instead
   private temperature: number;
   private top_p?: number;
   private reasoningOptions: LLMReasoningOptions;
@@ -113,8 +113,7 @@ export class Agent<T extends AgentOptions = AgentOptions>
       contextAwarenessOptions.maxImagesCount = 5; // Default to 5 images max
     }
 
-    // Initialize ModelResolver
-    this.modelResolver = new ModelResolver(options.model);
+    // Model resolution is now done on-demand using resolveModel function
 
     // Register any provided tools
     if (options.tools) {
@@ -123,17 +122,12 @@ export class Agent<T extends AgentOptions = AgentOptions>
       });
     }
 
-    const { providers } = this.options.model ?? {};
-    if (Array.isArray(providers)) {
-      this.logger.info(`Found ${providers.length} custom model providers`);
-    }
-
-    // Log the default selection
-    const defaultSelection = this.modelResolver.getDefaultSelection();
-    if (defaultSelection.provider || defaultSelection.id) {
+    // Log the default model configuration
+    const defaultModel = this.options.model;
+    if (defaultModel?.provider || defaultModel?.id) {
       this.logger.info(
-        `[Agent] ${this.name} initialized | Default model provider: ${defaultSelection.provider ?? 'N/A'} | ` +
-          `Default model: ${defaultSelection.id ?? 'N/A'} | ` +
+        `[Agent] ${this.name} initialized | Default model provider: ${defaultModel.provider ?? 'N/A'} | ` +
+          `Default model: ${defaultModel.id ?? 'N/A'} | ` +
           `Tools: ${options.tools?.length || 0} | Max iterations: ${this.maxIterations}`,
       );
     }
@@ -182,8 +176,8 @@ export class Agent<T extends AgentOptions = AgentOptions>
    */
   private initializeEarlyResolvedModel(): void {
     try {
-      // Try to resolve with default selection
-      this.currentResolvedModel = this.modelResolver.resolve();
+      // Try to resolve with default model configuration
+      this.currentResolvedModel = resolveModel(this.options.model);
 
       if (this.currentResolvedModel) {
         this.logger.info(
@@ -350,7 +344,8 @@ Provide concise and accurate responses.`;
         );
       } else {
         // Normal model resolution
-        this.currentResolvedModel = this.modelResolver.resolve(
+        this.currentResolvedModel = resolveModel(
+          this.options.model,
           normalizedOptions.model,
           normalizedOptions.provider,
         );
@@ -560,7 +555,7 @@ Provide concise and accurate responses.`;
 
     // Use current resolved model if available, otherwise resolve based on request
     const resolvedModel =
-      this.currentResolvedModel || this.modelResolver.resolve(request.model, request.provider);
+      this.currentResolvedModel || resolveModel(this.options.model, request.model, request.provider);
 
     // Create a system message to instruct the model
     const systemMessage: ChatCompletionMessageParam = {

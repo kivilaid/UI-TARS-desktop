@@ -63,8 +63,8 @@ export class AgioProvider implements AgioEvent.AgioProvider {
     const toolsCount = this.agent.getTools().length;
 
     // Get model providers count from agent options
-    const modelProviders = this.appConfig.model?.providers;
-    const modelProvidersCount = Array.isArray(modelProviders) ? modelProviders.length : 1;
+    // With simplified model configuration, we only have one provider per agent
+    const modelProvidersCount = this.appConfig.model?.provider ? 1 : 0;
 
     // @ts-expect-error
     // Get MCP servers count from config

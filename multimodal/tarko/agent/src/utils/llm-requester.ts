@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ModelResolver, ResolvedModel } from '@tarko/model-provider';
+import { resolveModel, ResolvedModel, AgentModel } from '@tarko/model-provider';
 import { LLMRequestHookPayload } from '@tarko/agent-interface';
 import { getLogger } from '@tarko/shared-utils';
 import { getLLMClient } from '../agent';
@@ -56,14 +56,14 @@ export class LLMRequester {
   async request(options: LLMRequestOptions): Promise<any> {
     const { provider, model, body, apiKey, baseURL, stream = false } = options;
 
-    const modelResolver = new ModelResolver({
+    const agentModel: AgentModel = {
       provider: provider as ResolvedModel['provider'],
       id: model,
       baseURL,
       apiKey,
-    });
+    };
 
-    const resolvedModel = modelResolver.resolve();
+    const resolvedModel = resolveModel(agentModel);
 
     // Get request body
     const response = this.getRequestBody(body);
