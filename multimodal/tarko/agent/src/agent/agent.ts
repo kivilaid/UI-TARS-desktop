@@ -477,7 +477,7 @@ Provide concise and accurate responses.`;
       return runnerClient;
     }
 
-    // If no client exists yet but we have a resolved model, create one
+    // If no client exists yet but we have a current model, create one
     if (this.currentModel) {
       try {
         const newClient = getLLMClient(this.currentModel, this.reasoningOptions);
@@ -510,7 +510,7 @@ Provide concise and accurate responses.`;
       throw new Error('LLM client not available');
     }
 
-    // Use current resolved model if available, otherwise resolve based on request
+    // Use current current model if available, otherwise resolve based on request
     const agentModel =
       this.currentModel || resolveModel(this.options.model, request.model, request.provider);
 
@@ -570,10 +570,10 @@ Provide concise and accurate responses.`;
   }
 
   /**
-   * Get the current resolved model configuration
+   * Get the current current model configuration
    * This is available after the agent loop has started
    *
-   * @returns The current resolved model configuration or undefined if not set
+   * @returns The current current model configuration or undefined if not set
    */
   public getCurrentModel(): AgentModel {
     return this.currentModel;
@@ -626,13 +626,13 @@ Provide concise and accurate responses.`;
 
   /**
    * Convenient method to call the current selected LLM
-   * This method encapsulates the common pattern of getting the LLM client and resolved model,
+   * This method encapsulates the common pattern of getting the LLM client and current model,
    * and provides better error handling when these are not available.
    *
-   * @param params - ChatCompletion parameters (model will be automatically set from current resolved model)
+   * @param params - ChatCompletion parameters (model will be automatically set from current current model)
    * @param options - Optional request options (e.g., signal for abort)
    * @returns Promise resolving to the LLM response with proper type inference based on stream parameter
-   * @throws Error if LLM client or resolved model is not available
+   * @throws Error if LLM client or current model is not available
    */
   public async callLLM(
     params: Omit<ChatCompletionCreateParams, 'model'> & { stream?: false },
@@ -662,7 +662,7 @@ Provide concise and accurate responses.`;
       );
     }
 
-    // Merge the resolved model ID with the provided parameters
+    // Merge the current model ID with the provided parameters
     const completeParams: ChatCompletionCreateParams = {
       ...params,
       model: agentModel.model,

@@ -122,7 +122,7 @@ export interface IAgent<T extends AgentOptions = AgentOptions> {
   /**
    * Generate a summary of conversation messages
    *
-   * FIXME: remove it, high-level layout can use resolved model to implement it.
+   * FIXME: remove it, high-level layout can use current model to implement it.
    *
    * @param request The summary request containing messages and optional model settings
    * @returns Promise resolving to the summary response
@@ -130,9 +130,9 @@ export interface IAgent<T extends AgentOptions = AgentOptions> {
   generateSummary(request: SummaryRequest): Promise<SummaryResponse>;
 
   /**
-   * Get the current resolved model configuration
+   * Get the current current model configuration
    *
-   * @returns The current resolved model configuration or undefined if not set
+   * @returns The current current model configuration or undefined if not set
    */
   getCurrentModel(): AgentModel | undefined;
 

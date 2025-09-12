@@ -143,8 +143,8 @@ describe('Agent', () => {
       expect(agent.getLLMClient()).toBe(mockLLMClient);
     });
 
-    it('should handle initial resolved model correctly', () => {
-      // Initially, no resolved model should be available
+    it('should handle initial current model correctly', () => {
+      // Initially, no current model should be available
       expect(agent.getCurrentModel()).toMatchInlineSnapshot(`
         {
           "actualProvider": "openai",

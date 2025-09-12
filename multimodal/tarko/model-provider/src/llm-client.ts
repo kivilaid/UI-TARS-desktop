@@ -18,7 +18,7 @@ export type LLMRequestInterceptor = (
 ) => any;
 
 /**
- * Create LLM Client based on resolved model configuration
+ * Create LLM Client based on current model configuration
  *
  * @param agentModel Resolved model configuration
  * @param requestInterceptor Optional request interceptor for modifying requests

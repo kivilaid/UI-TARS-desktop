@@ -9,19 +9,19 @@ import { createLLMClient, LLMReasoningOptions } from '@tarko/model-provider';
 const logger = getLogger('ModelProvider');
 
 /**
- * Get LLM Client based on resolved model configuration
+ * Get LLM Client based on current model configuration
  *
- * @param resolvedModel Resolved model configuration
+ * @param currentModel Resolved model configuration
  * @param reasoningOptions Reasoning options
  * @param requestInterceptor Optional request interceptor
  * @returns OpenAI-compatible client
  */
 export function getLLMClient(
-  resolvedModel: AgentModel,
+  currentModel: AgentModel,
   reasoningOptions: LLMReasoningOptions,
   requestInterceptor?: LLMRequestInterceptor,
 ) {
-  const { provider, model, baseProvider, baseURL } = resolvedModel;
+  const { provider, model, baseProvider, baseURL } = currentModel;
 
   logger.info(`Creating LLM client: 
 - Provider: ${provider} 
@@ -30,7 +30,7 @@ export function getLLMClient(
 - Base URL: ${baseURL || 'default'} 
 `);
 
-  return createLLMClient(resolvedModel, (provider, request, baseURL) => {
+  return createLLMClient(currentModel, (provider, request, baseURL) => {
     // Add reasoning options for compatible providers
     if (provider !== 'openai') {
       request.thinking = reasoningOptions;

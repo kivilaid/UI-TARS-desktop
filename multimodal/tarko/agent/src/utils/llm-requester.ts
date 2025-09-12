@@ -51,7 +51,7 @@ export class LLMRequester {
       apiKey,
     };
 
-    const resolvedModel = resolveModel(agentModel);
+    const currentModel = resolveModel(agentModel);
 
     // Get request body
     const response = this.getRequestBody(body);
@@ -67,7 +67,7 @@ export class LLMRequester {
     }
 
     // Create LLM client
-    const client = getLLMClient(resolvedModel, { type: options.thinking ? 'enabled' : 'disabled' });
+    const client = getLLMClient(currentModel, { type: options.thinking ? 'enabled' : 'disabled' });
 
     try {
       // @ts-expect-error

@@ -128,7 +128,7 @@ console.log(`Currently on iteration ${iteration}`);
 
 ### `getCurrentModel()`
 
-Gets the current resolved model configuration.
+Gets the current current model configuration.
 
 ```typescript
 const model = agent.getCurrentModel();
@@ -137,7 +137,7 @@ if (model) {
 }
 ```
 
-**Returns:** `AgentModel | undefined` - Current resolved model
+**Returns:** `AgentModel | undefined` - Current current model
 
 ### `getEventStream()`
 

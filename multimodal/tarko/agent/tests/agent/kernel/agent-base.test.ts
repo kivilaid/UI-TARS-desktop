@@ -103,7 +103,7 @@ describe('Agent Base Methods', () => {
       ).rejects.toThrow('LLM client is not available');
     });
 
-    it('should throw error when resolved model is not available', async () => {
+    it('should throw error when current model is not available', async () => {
       const agent = createTestAgent({}, testContext);
 
       // Mock getLLMClient to return a valid client
