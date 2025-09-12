@@ -10,7 +10,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { execa } from 'execa';
-import semver from 'semver';
 
 import { resolveWorkspaceConfig } from '../utils/workspace';
 import { gitCommit, gitPush, getCommitAuthorMap } from '../utils/git';
