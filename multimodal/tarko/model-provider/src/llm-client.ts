@@ -38,7 +38,7 @@ export function createLLMClient(
   // Add extended model support for non-native providers
   if (baseProvider && !NATIVE_PROVIDERS.has(baseProvider)) {
     // @ts-expect-error FIXME: support custom provider.
-    client.extendModelList(actualProvider, id, {
+    client.extendModelList(baseProvider, model, {
       streaming: true,
       json: true,
       toolCalls: true,
