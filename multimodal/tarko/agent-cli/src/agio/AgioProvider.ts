@@ -62,8 +62,7 @@ export class AgioProvider implements AgioEvent.AgioProvider {
     // Get tools count from agent
     const toolsCount = this.agent.getTools().length;
 
-    // Get model providers count from agent options
-    // With simplified model configuration, we only have one provider per agent
+    // FIXME: retrieve `model.providers` count from future `server.models`.
     const modelProvidersCount = this.appConfig.model?.provider ? 1 : 0;
 
     // @ts-expect-error
