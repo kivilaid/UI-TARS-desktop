@@ -14,15 +14,29 @@ import {
   isAgentWebUIImplementationType,
 } from '@tarko/interface';
 import { resolveValue, loadWorkspaceConfig } from '../utils';
-import { logDeprecatedWarning, logConfigComplete } from './display';
+import { logConfigComplete } from './display';
 
 /**
- * Handler for processing deprecated CLI options
+ * Handler for processing custom CLI options
  */
 export type CLIOptionsEnhancer<
   T extends AgentCLIArguments = AgentCLIArguments,
   U extends AgentAppConfig = AgentAppConfig,
 > = (cliArguments: T, appConfig: Partial<U>) => void;
+
+/**
+ * Configuration builder options
+ */
+export interface ConfigBuilderOptions<
+  T extends AgentCLIArguments = AgentCLIArguments,
+  U extends AgentAppConfig = AgentAppConfig,
+> {
+  cliArguments: T;
+  userConfig: Partial<U>;
+  appDefaults?: Partial<U>;
+  cliOptionsEnhancer?: CLIOptionsEnhancer<T, U>;
+  workspacePath?: string;
+}
 
 /**
  * Build complete application configuration from CLI arguments, user config, and app defaults
@@ -39,141 +53,70 @@ export function buildAppConfig<
   T extends AgentCLIArguments = AgentCLIArguments,
   U extends AgentAppConfig = AgentAppConfig,
 >(
-  cliArguments: T,
-  userConfig: Partial<U>,
+  cliArgumentsOrOptions: T | ConfigBuilderOptions<T, U>,
+  userConfig?: Partial<U>,
   appDefaults?: Partial<U>,
   cliOptionsEnhancer?: CLIOptionsEnhancer<T, U>,
   workspacePath?: string,
 ): U {
-  let config: Partial<U> = appDefaults ? { ...appDefaults } : {};
-
-  // @ts-expect-error
-  config = deepMerge(config, userConfig);
-
-  if (workspacePath) {
-    const workspaceConfig = loadWorkspaceConfig(workspacePath);
-    // @ts-expect-error
-    config = deepMerge(config, workspaceConfig);
+  // Handle both old and new API for backward compatibility
+  let options: ConfigBuilderOptions<T, U>;
+  
+  if (userConfig !== undefined || appDefaults !== undefined || cliOptionsEnhancer !== undefined || workspacePath !== undefined) {
+    // Old API: individual parameters
+    options = {
+      cliArguments: cliArgumentsOrOptions as T,
+      userConfig: userConfig || {},
+      appDefaults,
+      cliOptionsEnhancer,
+      workspacePath,
+    };
+  } else {
+    // New API: options object
+    options = cliArgumentsOrOptions as ConfigBuilderOptions<T, U>;
+  }
+  const { 
+    cliArguments, 
+    userConfig: finalUserConfig, 
+    appDefaults: finalAppDefaults, 
+    cliOptionsEnhancer: finalCliOptionsEnhancer, 
+    workspacePath: finalWorkspacePath 
+  } = options;
+  // Build configuration with proper type safety
+  const configBuilder = new ConfigurationBuilder<U>();
+  
+  // Add configurations in priority order (lowest to highest)
+  if (finalAppDefaults) {
+    configBuilder.addConfig(finalAppDefaults);
+  }
+  
+  configBuilder.addConfig(finalUserConfig);
+  
+  if (finalWorkspacePath) {
+    const workspaceConfig = loadWorkspaceConfig(finalWorkspacePath);
+    configBuilder.addConfig(workspaceConfig as Partial<U>);
   }
 
-  // Extract CLI-specific properties
-  const {
-    agent,
-    workspace,
-    config: configPath,
-    debug,
-    quiet,
-    port,
-    stream,
-    // Extract core deprecated options
-    provider,
-    apiKey,
-    baseURL,
-    shareProvider,
-    thinking,
-    // Extract tool filter options
-    tool,
-    // Extract MCP server filter options
-    mcpServer,
-    // Extract server options
-    server,
-    ...cliConfigProps
-  } = cliArguments;
-
-  // Handle deprecated options
-  const deprecatedOptions = {
-    provider,
-    apiKey: apiKey || undefined,
-    baseURL,
-    shareProvider,
-    thinking,
-  }; // secretlint-disable-line @secretlint/secretlint-rule-pattern
-  const deprecatedKeys = Object.entries(deprecatedOptions)
-    .filter(([, value]) => value !== undefined)
-    .map(([optionName]) => optionName);
-
-  logDeprecatedWarning(deprecatedKeys);
-  handleCoreDeprecatedOptions(cliConfigProps, deprecatedOptions);
-
-  // Handle tool filters
-  handleToolFilterOptions(cliConfigProps, { tool });
-
-  // Handle MCP server filters
-  handleMCPServerFilterOptions(cliConfigProps, { mcpServer });
-
-  // Handle server options
-  handleServerOptions(cliConfigProps, { server });
-
-  // Process additional options
-  if (cliOptionsEnhancer) {
-    cliOptionsEnhancer(cliArguments, config);
-  }
-
-  // Resolve model secrets
-  resolveModelSecrets(cliConfigProps);
-
-  // @ts-expect-error
-  config = deepMerge(config, cliConfigProps);
-
-  // Apply CLI shortcuts
-  applyLoggingShortcuts(config, { debug, quiet });
-  applyServerConfiguration(config, { port });
-
-  // Apply WebUI defaults
-  applyWebUIDefaults(config as AgentAppConfig);
-
+  // Process CLI arguments through dedicated processor
+  const cliProcessor = new CLIArgumentsProcessor(cliArguments);
+  const processedCliConfig = cliProcessor.process(finalCliOptionsEnhancer);
+  
+  configBuilder.addConfig(processedCliConfig);
+  
+  // Build final configuration
+  let finalConfig = configBuilder.build();
+  
+  // Apply post-processing steps
+  finalConfig = applyConfigurationDefaults(finalConfig, cliArguments);
+  
   // Log configuration
   const isDebug = cliArguments.debug || false;
-  logConfigComplete(config as AgentAppConfig, isDebug);
-
-  return config as U;
+  logConfigComplete(finalConfig, isDebug);
+  
+  return finalConfig;
 }
 
-/**
- * Handle core deprecated CLI options (common to all agent types)
- */
-function handleCoreDeprecatedOptions(
-  config: Partial<AgentAppConfig>,
-  deprecated: {
-    provider?: string;
-    apiKey?: string;
-    baseURL?: string;
-    shareProvider?: string;
-    thinking?: boolean;
-  },
-): void {
-  const { provider, apiKey: deprecatedApiKey, baseURL, shareProvider, thinking } = deprecated; // secretlint-disable-line @secretlint/secretlint-rule-pattern
 
-  // Handle deprecated model configuration
-  if (provider || deprecatedApiKey || baseURL) {
-    config.model = {
-      id: (typeof config.model === 'string' ? config.model : config.model?.id)!,
-      provider: (config.model?.provider ?? provider) as ModelProviderName,
-      apiKey: config.model?.apiKey ?? deprecatedApiKey,
-      baseURL: config.model?.baseURL ?? baseURL,
-    };
-  }
-  // Handle deprecated share provider
-  if (shareProvider) {
-    if (!config.share) {
-      config.share = {};
-    }
-
-    if (!config.share.provider) {
-      config.share.provider = shareProvider;
-    }
-  }
-
-  if (thinking) {
-    if (typeof thinking === 'boolean') {
-      config.thinking = {
-        type: thinking ? 'enabled' : 'disabled',
-      };
-    } else if (typeof thinking === 'object') {
-      config.thinking = thinking;
-    }
-  }
-}
 
 /**
  * Handle server CLI options
@@ -384,10 +327,9 @@ function handleMCPServerFilterOptions(
   }
 
   // Initialize mcpServer config if it doesn't exist
-  // @ts-expect-error
-  if (!config.mcpServer) {
-    // @ts-expect-error
-    config.mcpServer = {};
+  const configAny = config as any;
+  if (!configAny.mcpServer) {
+    configAny.mcpServer = {};
   }
 
   // Handle include patterns
@@ -403,8 +345,7 @@ function handleMCPServerFilterOptions(
         .filter((p) => p.length > 0),
     );
     if (flattenedInclude.length > 0) {
-      // @ts-expect-error
-      config.mcpServer.include = flattenedInclude;
+      configAny.mcpServer.include = flattenedInclude;
     }
   }
 
@@ -421,8 +362,106 @@ function handleMCPServerFilterOptions(
         .filter((p) => p.length > 0),
     );
     if (flattenedExclude.length > 0) {
-      // @ts-expect-error
-      config.mcpServer.exclude = flattenedExclude;
+      configAny.mcpServer.exclude = flattenedExclude;
     }
   }
+}
+
+/**
+ * Configuration builder for type-safe configuration merging
+ */
+class ConfigurationBuilder<T extends AgentAppConfig = AgentAppConfig> {
+  private configs: Partial<T>[] = [];
+
+  /**
+   * Add a configuration layer
+   */
+  addConfig(config: Partial<T>): this {
+    if (config && typeof config === 'object') {
+      this.configs.push(config);
+    }
+    return this;
+  }
+
+  /**
+   * Build the final configuration by merging all layers
+   */
+  build(): T {
+    let result = {} as T;
+    for (const config of this.configs) {
+      result = deepMerge(result, config as any) as T;
+    }
+    return result;
+  }
+}
+
+/**
+ * CLI arguments processor for handling CLI-specific logic
+ */
+class CLIArgumentsProcessor<T extends AgentCLIArguments = AgentCLIArguments> {
+  constructor(private cliArguments: T) {}
+
+  /**
+   * Process CLI arguments into configuration
+   */
+  process<U extends AgentAppConfig>(
+    enhancer?: CLIOptionsEnhancer<T, U>,
+  ): Partial<U> {
+    // Handle undefined cliArguments
+    if (!this.cliArguments) {
+      return {} as Partial<U>;
+    }
+    
+    // Extract CLI-specific properties
+    const {
+      agent,
+      workspace,
+      config: configPath,
+      debug,
+      quiet,
+      port,
+      tool,
+      mcpServer,
+      server,
+      ...cliConfigProps
+    } = this.cliArguments;
+
+    // Handle tool filters
+    handleToolFilterOptions(cliConfigProps, { tool });
+
+    // Handle MCP server filters
+    handleMCPServerFilterOptions(cliConfigProps, { mcpServer });
+
+    // Handle server options
+    handleServerOptions(cliConfigProps, { server });
+
+    // Resolve model secrets
+    resolveModelSecrets(cliConfigProps);
+
+    // Apply enhancer if provided
+    if (enhancer) {
+      enhancer(this.cliArguments, cliConfigProps as any);
+    }
+
+    return cliConfigProps as unknown as Partial<U>;
+  }
+}
+
+/**
+ * Apply configuration defaults and post-processing
+ */
+function applyConfigurationDefaults<T extends AgentAppConfig>(
+  config: T,
+  cliArguments: AgentCLIArguments,
+): T {
+  const { debug, quiet, port } = cliArguments;
+  
+  // Apply CLI shortcuts
+  applyLoggingShortcuts(config, { debug, quiet });
+  applyServerConfiguration(config, { port });
+
+  // Apply WebUI defaults
+  applyWebUIDefaults(config);
+
+  return config;
 }

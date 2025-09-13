@@ -12,9 +12,8 @@ import {
   TARKO_CONSTANTS,
   LogLevel,
 } from '@tarko/interface';
-import { addCommonOptions, resolveAgentFromCLIArgument } from './options';
+import { resolveAgentFromCLIArgument } from './options';
 import { buildConfigPaths } from '../config/paths';
-import { readFromStdin } from './stdin';
 import { deepMerge, logger, printWelcomeLogo, resolveWorkspacePath } from '../utils';
 import {
   buildAppConfig,
@@ -24,6 +23,12 @@ import {
 } from '../config';
 import { GlobalWorkspaceCommand } from './commands';
 import { CLICommand, CLIInstance, AgentCLIInitOptions, AgentServerInitOptions } from '../types';
+import {
+  ServeCommandHandler,
+  RunCommandHandler,
+  RequestCommandHandler,
+  WorkspaceCommandHandler,
+} from './command-handlers';
 
 const DEFAULT_OPTIONS: Partial<AgentCLIInitOptions> = {
   versionInfo: {
@@ -121,10 +126,22 @@ export class AgentCLI {
    * This method registers the basic commands that all agent CLIs should have
    */
   private registerCoreCommands(cli: CLIInstance): void {
-    this.registerServeCommand(cli);
-    this.registerRunCommand(cli);
+    // Create argument processor function for reuse
+    const processArguments = this.createArgumentProcessor();
+
+    this.registerServeCommand(cli, processArguments);
+    this.registerRunCommand(cli, processArguments);
     this.registerRequestCommand(cli);
     this.registerWorkspaceCommand(cli);
+  }
+
+  /**
+   * Create argument processor function for command handlers
+   */
+  private createArgumentProcessor() {
+    return async (cliArguments: AgentCLIArguments) => {
+      return await this.processCLIArguments(cliArguments);
+    };
   }
 
   /**
@@ -141,100 +158,49 @@ export class AgentCLI {
   /**
    * Register the 'serve' command
    */
-  private registerServeCommand(cli: CLIInstance): void {
+  private registerServeCommand(
+    cli: CLIInstance,
+    processArguments: (args: AgentCLIArguments) => Promise<{
+      agentServerInitOptions: AgentServerInitOptions;
+      isDebug: boolean;
+    }>,
+  ): void {
+    const handler = new ServeCommandHandler(processArguments);
     const serveCommand = cli.command('serve', 'Launch a headless Agent Server.');
 
-    // Apply common options first
-    let configuredCommand = addCommonOptions(serveCommand);
-
-    // Apply agent-specific configurations for commands that run agents
+    // Configure command with handler
+    let configuredCommand = handler.configure(serveCommand);
+    
+    // Apply agent-specific configurations
     configuredCommand = this.configureAgentCommand(configuredCommand);
 
     configuredCommand.action(async (cliArguments: AgentCLIArguments = {}) => {
       this.printLogo();
-
-      try {
-        const { agentServerInitOptions, isDebug } = await this.processCLIArguments(cliArguments);
-        const { startHeadlessServer } = await import('./commands/serve');
-        await startHeadlessServer({
-          agentServerInitOptions,
-          isDebug,
-        });
-      } catch (err) {
-        console.error('Failed to start server:', err);
-        process.exit(1);
-      }
+      await handler.execute(cliArguments);
     });
   }
 
   /**
    * Register the 'run' command (default command)
    */
-  private registerRunCommand(cli: CLIInstance): void {
+  private registerRunCommand(
+    cli: CLIInstance,
+    processArguments: (args: AgentCLIArguments) => Promise<{
+      agentServerInitOptions: AgentServerInitOptions;
+      isDebug: boolean;
+    }>,
+  ): void {
+    const handler = new RunCommandHandler(processArguments);
     const runCommand = cli.command('[run] [agent]', 'Run Agent in interactive UI or headless mode');
 
-    runCommand
-      .option('--headless', 'Run in headless mode and output results to stdout')
-      .option('--input [...query]', 'Input query to process (for headless mode)')
-      .option(
-        '--format [format]',
-        'Output format: "json" or "text" (default: "text") (for headless mode)',
-        {
-          default: 'text',
-        },
-      )
-      .option(
-        '--include-logs',
-        'Include captured logs in the output (for debugging) (for headless mode)',
-        {
-          default: false,
-        },
-      )
-      .option(
-        '--use-cache [useCache]',
-        'Use cache for headless mode execution (for headless mode)',
-        {
-          default: true,
-        },
-      );
-
-    // Apply common options first
-    let configuredCommand = addCommonOptions(runCommand);
-
-    // Apply agent-specific configurations for commands that run agents
+    // Configure command with handler
+    let configuredCommand = handler.configure(runCommand);
+    
+    // Apply agent-specific configurations
     configuredCommand = this.configureAgentCommand(configuredCommand);
+    
     configuredCommand.action(async (...args: any[]) => {
-      // Handle dynamic arguments due to optional positional parameters [run] [agent]
-      // CAC passes arguments in this pattern:
-      // - tarko --agent ./        -> args = [undefined, undefined, cliArguments]
-      // - tarko run              -> args = ['run', undefined, cliArguments]
-      // - tarko run ./           -> args = ['run', './', cliArguments]
-      // - tarko ./               -> args = [undefined, './', cliArguments]
-
-      // The last argument is always the parsed CLI options object
-      const cliArguments: AgentCLIArguments = args[args.length - 1] || {};
-
-      // The second-to-last argument is the agent parameter
-      const agent = args[args.length - 2];
-
-      // If agent is provided as positional argument, use it
-      if (agent && typeof agent === 'string') {
-        // Warn if both positional agent and --agent flag are provided
-        if (cliArguments.agent && cliArguments.agent !== agent) {
-          console.warn(
-            `Warning: Both positional agent '${agent}' and --agent flag '${cliArguments.agent}' provided. Using positional agent '${agent}'.`,
-          );
-        }
-        cliArguments.agent = agent;
-      }
-
-      if (cliArguments.headless) {
-        // Headless mode - same as old 'run' command
-        await this.runHeadlessMode(cliArguments);
-      } else {
-        // Interactive UI mode - same as old 'start' command
-        await this.runInteractiveMode(cliArguments);
-      }
+      await handler.execute(...args);
     });
   }
 
@@ -242,105 +208,17 @@ export class AgentCLI {
    * Register the 'request' command
    */
   private registerRequestCommand(cli: CLIInstance): void {
-    cli
-      .command('request', 'Send a direct request to an model provider')
-      .option('--provider <provider>', 'LLM provider name (required)')
-      .option('--model <model>', 'Model name (required)')
-      .option('--body <body>', 'Path to request body JSON file or JSON string (required)')
-      .option('--apiKey [apiKey]', 'Custom API key')
-      .option('--baseURL [baseURL]', 'Custom base URL')
-      .option('--stream', 'Enable streaming mode')
-      .option('--thinking', 'Enable reasoning mode')
-      .option('--format [format]', 'Output format: "raw" (default) or "semantic"', {
-        default: 'raw',
-      })
-      .action(async (options = {}) => {
-        try {
-          const { processRequestCommand } = await import('./commands/request');
-          await processRequestCommand(options);
-        } catch (err) {
-          console.error('Failed to process request:', err);
-          process.exit(1);
-        }
-      });
+    const handler = new RequestCommandHandler();
+    const requestCommand = cli.command('request', 'Send a direct request to an model provider');
+    
+    const configuredCommand = handler.configure(requestCommand);
+    
+    configuredCommand.action(async (options = {}) => {
+      await handler.execute(options);
+    });
   }
 
-  /**
-   * Handle headless mode execution
-   */
-  private async runHeadlessMode(cliArguments: AgentCLIArguments): Promise<void> {
-    try {
-      let input: string;
 
-      if (
-        cliArguments.input &&
-        (Array.isArray(cliArguments.input) ? cliArguments.input.length > 0 : true)
-      ) {
-        input = Array.isArray(cliArguments.input)
-          ? cliArguments.input.join(' ')
-          : cliArguments.input;
-      } else {
-        const stdinInput = await readFromStdin();
-
-        if (!stdinInput) {
-          console.error('Error: No input provided. Use --input parameter or pipe content to stdin');
-          process.exit(1);
-        }
-
-        input = stdinInput;
-      }
-
-      const quietMode = cliArguments.debug ? false : true;
-
-      const { agentServerInitOptions, isDebug } = await this.processCLIArguments({
-        ...cliArguments,
-        quiet: quietMode,
-      });
-
-      const useCache = cliArguments.useCache !== false;
-
-      if (useCache) {
-        const { processServerRun } = await import('./commands/run');
-        await processServerRun({
-          agentServerInitOptions,
-          input,
-          format: cliArguments.format as 'json' | 'text',
-          includeLogs: cliArguments.includeLogs || !!cliArguments.debug,
-          isDebug,
-        });
-      } else {
-        const { processSilentRun } = await import('./commands/run');
-        await processSilentRun({
-          agentServerInitOptions,
-          input,
-          format: cliArguments.format as 'json' | 'text',
-          includeLogs: cliArguments.includeLogs || !!cliArguments.debug,
-        });
-      }
-    } catch (err) {
-      console.error('Error:', err instanceof Error ? err.message : String(err));
-      process.exit(1);
-    }
-  }
-
-  /**
-   * Handle interactive mode execution
-   */
-  private async runInteractiveMode(cliArguments: AgentCLIArguments): Promise<void> {
-    this.printLogo();
-    try {
-      const { agentServerInitOptions, isDebug } = await this.processCLIArguments(cliArguments);
-      const { startInteractiveWebUI } = await import('./commands/start');
-      await startInteractiveWebUI({
-        agentServerInitOptions,
-        isDebug,
-        open: cliArguments.open,
-      });
-    } catch (err) {
-      console.error('Failed to start server:', err);
-      process.exit(1);
-    }
-  }
 
   /**
    * Process common command options and prepare configuration
@@ -385,13 +263,13 @@ export class AgentCLI {
     // Get CLI options enhancer from subclass
     const cliOptionsEnhancer = this.configureCLIOptionsEnhancer();
 
-    const appConfig = buildAppConfig(
+    const appConfig = buildAppConfig({
       cliArguments,
       userConfig,
-      this.options.appConfig,
+      appDefaults: this.options.appConfig,
       cliOptionsEnhancer,
-      workspace,
-    );
+      workspacePath: workspace,
+    });
 
     // Update logger level with final config if it differs from CLI arguments
     if (appConfig.logLevel && !cliArguments.quiet && !isDebug) {
@@ -423,37 +301,13 @@ export class AgentCLI {
   }
 
   private registerWorkspaceCommand(cli: CLIInstance): void {
+    const handler = new WorkspaceCommandHandler(this.options.directories?.globalWorkspaceDir);
     const workspaceCommand = cli.command('workspace', 'Manage agent workspace');
-
-    workspaceCommand
-      .option('--init', 'Initialize a new workspace')
-      .option('--open', 'Open the workspace in VSCode')
-      .option('--enable', 'Enable global workspace')
-      .option('--disable', 'Disable global workspace')
-      .option('--status', 'Show workspace status')
-      .action(
-        async (
-          options: {
-            init?: boolean;
-            open?: boolean;
-            enable?: boolean;
-            disable?: boolean;
-            status?: boolean;
-          } = {},
-        ) => {
-          try {
-            const workspaceCmd = new GlobalWorkspaceCommand(
-              this.options.directories?.globalWorkspaceDir,
-            );
-            await workspaceCmd.execute(options);
-          } catch (err) {
-            console.error(
-              'Workspace command failed:',
-              err instanceof Error ? err.message : String(err),
-            );
-            process.exit(1);
-          }
-        },
-      );
+    
+    const configuredCommand = handler.configure(workspaceCommand);
+    
+    configuredCommand.action(async (options = {}) => {
+      await handler.execute(options);
+    });
   }
 }

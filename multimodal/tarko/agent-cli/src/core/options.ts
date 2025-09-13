@@ -45,19 +45,12 @@ export function addCommonOptions(command: Command): Command {
     // Model configuration
     .option('--model <model>', 'model provider config')
     .option('--model.provider [provider]', 'LLM provider name')
-    .option(
-      '--provider [provider]',
-      'LLM provider name (deprecated, replaced by `--model.provider`)',
-    )
     .option('--model.id [model]', 'Model identifier')
     .option('--model.apiKey [apiKey]', 'Model API key')
-    .option('--apiKey [apiKey]', 'Model API key (deprecated, replaced by `--model.apiKey`)')
     .option('--model.baseURL [baseURL]', 'Model base URL')
-    .option('--baseURL [baseURL]', 'Model Base URL (deprecated, replaced by `--model.baseURL`)')
 
     // LLM behavior
     .option('--stream', 'Enable streaming mode for LLM responses')
-    .option('--thinking', 'Used to control the reasoning content.')
     .option('--thinking.type [type]', 'Enable reasoning mode for compatible models (enabled)')
 
     // Tool call engine
@@ -106,10 +99,6 @@ export function addCommonOptions(command: Command): Command {
     // Share configuration
     .option('--share <share>', 'Share config')
     .option('--share.provider [url]', 'Share provider URL')
-    .option(
-      '--share-provider [url]',
-      'Share provider URL (deprecated, replaced by `--share.provider`)',
-    )
 
     // Snapshot configuration
     .option('--snapshot <snapshot>', 'Snapshot config')

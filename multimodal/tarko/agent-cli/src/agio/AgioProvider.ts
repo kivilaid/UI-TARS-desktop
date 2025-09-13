@@ -9,17 +9,10 @@ import { IAgent, AgentEventStream, AgentAppConfig, AgentStatus } from '@tarko/in
 import { AgioBatchProcessor } from './AgioBatchProcessor';
 
 /**
- * AgioProvider default implementation
+ * AgioProvider default implementation for agent event tracking
  *
- * In fact, it is wrong to couple mcpServers here, but considering that it is not
- * worth doing too much abstraction for agio, we temporarily choose to keep the
- * implicit dependency to `mcp-agent` and `agent-tars`. so that the upper layers
- * of MCP Agent and Agent TARS do not need to implement AgioProvider.
- *
- * FIXME: we do not implement following events for now:
- *
- * - agent_tps
- * - user_feedback
+ * Provides standardized event collection and reporting for agent operations.
+ * Events are batched and sent efficiently to the configured provider.
  */
 export class AgioProvider implements AgioEvent.AgioProvider {
   protected runId?: string;
@@ -59,15 +52,11 @@ export class AgioProvider implements AgioEvent.AgioProvider {
     toolsCount: number;
     modelProvidersCount: number;
   } {
-    // Get tools count from agent
     const toolsCount = this.agent.getTools().length;
-
-    // FIXME: retrieve `model.providers` count from future `server.models`.
     const modelProvidersCount = this.appConfig.model?.provider ? 1 : 0;
-
-    // @ts-expect-error
-    // Get MCP servers count from config
-    const mcpServersConfig = this.appConfig.mcpServers || {};
+    
+    // Get MCP servers count from config if available
+    const mcpServersConfig = (this.appConfig as any).mcpServers || {};
     const mcpServersCount = Object.keys(mcpServersConfig).length;
 
     return {
@@ -102,28 +91,12 @@ export class AgioProvider implements AgioEvent.AgioProvider {
         maxTokens: this.appConfig.maxTokens!,
         temperature: this.appConfig.temperature,
         maxIterations: this.appConfig.maxIterations,
-        // @ts-expect-error
-        browserControl: this.appConfig.browser?.control,
-        plannerEnabled:
-          // @ts-expect-error
-          typeof this.appConfig.planner === 'object'
-            ? // @ts-expect-error
-              this.appConfig.planner.enable
-            : // @ts-expect-error
-              Boolean(this.appConfig.planner),
+        browserControl: (this.appConfig as any).browser?.control,
+        plannerEnabled: this.getPlannerEnabled(),
         thinkingEnabled: this.appConfig.thinking?.type === 'enabled',
         snapshotEnabled: this.appConfig.snapshot?.enable,
-        researchEnabled:
-          // @ts-expect-error
-          typeof this.appConfig.planner === 'object'
-            ? // @ts-expect-error
-              this.appConfig.planner.enable
-            : // @ts-expect-error
-              Boolean(this.appConfig.planner),
-        customMcpServers: Boolean(
-          // @ts-expect-error
-          this.appConfig.mcpServers && Object.keys(this.appConfig.mcpServers).length > 0,
-        ),
+        researchEnabled: this.getPlannerEnabled(),
+        customMcpServers: this.hasCustomMcpServers(),
       },
 
       count: counts,
@@ -386,15 +359,39 @@ export class AgioProvider implements AgioEvent.AgioProvider {
   }
 
   /**
-   * Extract MCP server name from tool name
-   * FIXME: using a better solution to detect mcp server name.
+   * Extract MCP server name from tool name based on common patterns
    */
   private extractMCPServer(toolName: string): string | undefined {
-    if (toolName.startsWith('browser_')) return 'browser';
-    if (toolName.startsWith('filesystem_')) return 'filesystem';
-    if (toolName === 'web_search') return 'search';
-    if (toolName.startsWith('commands_')) return 'commands';
+    const patterns = {
+      browser: /^browser_/,
+      filesystem: /^filesystem_/,
+      search: /^(web_search|search_)/,
+      commands: /^commands_/,
+    };
+
+    for (const [serverName, pattern] of Object.entries(patterns)) {
+      if (pattern.test(toolName)) {
+        return serverName;
+      }
+    }
+    
     return undefined;
+  }
+
+  /**
+   * Check if planner is enabled
+   */
+  private getPlannerEnabled(): boolean {
+    const planner = (this.appConfig as any).planner;
+    return typeof planner === 'object' ? planner.enable : Boolean(planner);
+  }
+
+  /**
+   * Check if custom MCP servers are configured
+   */
+  private hasCustomMcpServers(): boolean {
+    const mcpServers = (this.appConfig as any).mcpServers;
+    return Boolean(mcpServers && Object.keys(mcpServers).length > 0);
   }
 
   /**

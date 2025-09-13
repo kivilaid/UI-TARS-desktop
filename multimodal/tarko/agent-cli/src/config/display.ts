@@ -39,16 +39,7 @@ export function logConfigError(source: string, error: string) {
   logger.error(`Failed to load config from ${displaySource}: ${error}`);
 }
 
-/**
- * Log deprecated options warning (always shown)
- */
-export function logDeprecatedWarning(options: string[]) {
-  if (options.length === 0) return;
 
-  logger.warn(
-    `Deprecated CLI options detected: ${options.join(', ')}. Consider using config file format.`,
-  );
-}
 
 /**
  * Log final configuration summary (debug only)

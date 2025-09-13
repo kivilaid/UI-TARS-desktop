@@ -7,3 +7,5 @@ export * from './cli';
 export * from './options';
 export * from './stdin';
 export * from './commands';
+export * from './command-handler';
+export * from './command-handlers';

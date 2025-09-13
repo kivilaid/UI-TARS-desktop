@@ -15,54 +15,44 @@ interface ConsoleInterceptorOptions {
  * ConsoleInterceptor - Temporarily intercepts console output
  */
 export class ConsoleInterceptor {
-  private originalConsole: {
-    log: typeof console.log;
-    info: typeof console.info;
-    warn: typeof console.warn;
-    error: typeof console.error;
-    debug: typeof console.debug;
-  };
-
+  private originalMethods: Map<string, Function> = new Map();
   private buffer: string[] = [];
-  private options: ConsoleInterceptorOptions;
+  private options: Required<ConsoleInterceptorOptions>;
 
   constructor(options: ConsoleInterceptorOptions = {}) {
     this.options = {
       silent: true,
       capture: true,
+      filter: () => true,
+      debug: false,
       ...options,
     };
 
-    this.originalConsole = {
-      log: console.log,
-      info: console.info,
-      warn: console.warn,
-      error: console.error,
-      debug: console.debug,
-    };
+    // Store original console methods
+    const methods = ['log', 'info', 'warn', 'error', 'debug'] as const;
+    methods.forEach(method => {
+      this.originalMethods.set(method, console[method]);
+    });
   }
 
   start(): void {
     if (this.options.debug) {
-      this.originalConsole.error('AgentCLI Starting console output interception');
+      (this.originalMethods.get('error') as Function)('AgentCLI Starting console output interception');
     }
 
-    console.log = this.createInterceptor(this.originalConsole.log);
-    console.info = this.createInterceptor(this.originalConsole.info);
-    console.warn = this.createInterceptor(this.originalConsole.warn, process.stderr);
-    console.error = this.createInterceptor(this.originalConsole.error, process.stderr);
-    console.debug = this.createInterceptor(this.originalConsole.debug);
+    const methods = ['log', 'info', 'warn', 'error', 'debug'] as const;
+    methods.forEach(method => {
+      (console as any)[method] = this.createInterceptor(method);
+    });
   }
 
   stop(): void {
-    console.log = this.originalConsole.log;
-    console.info = this.originalConsole.info;
-    console.warn = this.originalConsole.warn;
-    console.error = this.originalConsole.error;
-    console.debug = this.originalConsole.debug;
+    this.originalMethods.forEach((originalMethod, methodName) => {
+      (console as any)[methodName] = originalMethod;
+    });
 
     if (this.options.debug) {
-      this.originalConsole.error('AgentCLI Console output interception stopped');
+      (this.originalMethods.get('error') as Function)('AgentCLI Console output interception stopped');
     }
   }
 
@@ -78,16 +68,15 @@ export class ConsoleInterceptor {
     this.buffer = [];
   }
 
-  private createInterceptor(
-    original: (...args: any[]) => void,
-    stream: NodeJS.WriteStream = process.stdout,
-  ): (...args: any[]) => void {
+  private createInterceptor(methodName: string): (...args: any[]) => void {
+    const original = this.originalMethods.get(methodName) as Function;
+    
     return (...args: any[]): void => {
       const message = args
         .map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg)))
         .join(' ');
 
-      if (this.options.filter && !this.options.filter(message)) {
+      if (!this.options.filter(message)) {
         original.apply(console, args);
         return;
       }
@@ -97,7 +86,7 @@ export class ConsoleInterceptor {
       }
 
       if (this.options.debug) {
-        this.originalConsole.error(`AgentCLI [Intercepted]: ${message}`);
+        (this.originalMethods.get('error') as Function)(`AgentCLI [Intercepted]: ${message}`);
       }
 
       if (!this.options.silent) {
