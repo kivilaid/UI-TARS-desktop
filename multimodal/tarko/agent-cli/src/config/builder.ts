@@ -423,8 +423,23 @@ class CLIArgumentsProcessor<T extends AgentCLIArguments = AgentCLIArguments> {
       tool,
       mcpServer,
       server,
+      // Extract deprecated options
+      provider,
+      apiKey,
+      baseURL,
+      shareProvider,
+      model,
       ...cliConfigProps
     } = this.cliArguments;
+
+    // Handle deprecated options
+    this.handleDeprecatedOptions(cliConfigProps as any, {
+      provider,
+      apiKey,
+      baseURL,
+      shareProvider,
+      model,
+    });
 
     // Handle tool filters
     handleToolFilterOptions(cliConfigProps, { tool });
@@ -444,6 +459,54 @@ class CLIArgumentsProcessor<T extends AgentCLIArguments = AgentCLIArguments> {
     }
 
     return cliConfigProps as unknown as Partial<U>;
+  }
+
+  /**
+   * Handle deprecated CLI options
+   */
+  private handleDeprecatedOptions(
+    config: Partial<AgentAppConfig>,
+    deprecated: {
+      provider?: string;
+      apiKey?: string;
+      baseURL?: string;
+      shareProvider?: string;
+      model?: string | object;
+    },
+  ): void {
+    const { provider, apiKey: deprecatedApiKey, baseURL, shareProvider, model } = deprecated;
+
+    // Handle deprecated model configuration
+    if (provider || deprecatedApiKey || baseURL || (typeof model === 'string')) {
+      // Initialize model config if it doesn't exist
+      if (!config.model) {
+        config.model = {};
+      }
+      
+      // If model is a string, convert it to object format
+      if (typeof model === 'string') {
+        config.model.id = model;
+      }
+      
+      // Apply deprecated options (CLI args should override existing config)
+      if (provider) {
+        config.model.provider = provider as ModelProviderName;
+      }
+      if (deprecatedApiKey) {
+        config.model.apiKey = deprecatedApiKey;
+      }
+      if (baseURL) {
+        config.model.baseURL = baseURL;
+      }
+    }
+
+    // Handle deprecated share provider
+    if (shareProvider) {
+      if (!config.share) {
+        config.share = {};
+      }
+      config.share.provider = shareProvider;
+    }
   }
 }
 
