@@ -480,23 +480,23 @@ class CLIArgumentsProcessor<T extends AgentCLIArguments = AgentCLIArguments> {
     if (provider || deprecatedApiKey || baseURL || (typeof model === 'string')) {
       // Initialize model config if it doesn't exist
       if (!config.model) {
-        config.model = {};
+        config.model = {} as any;
       }
       
       // If model is a string, convert it to object format
       if (typeof model === 'string') {
-        config.model.id = model;
+        (config.model as any).id = model;
       }
       
       // Apply deprecated options (CLI args should override existing config)
       if (provider) {
-        config.model.provider = provider as ModelProviderName;
+        (config.model as any).provider = provider as ModelProviderName;
       }
       if (deprecatedApiKey) {
-        config.model.apiKey = deprecatedApiKey;
+        (config.model as any).apiKey = deprecatedApiKey;
       }
       if (baseURL) {
-        config.model.baseURL = baseURL;
+        (config.model as any).baseURL = baseURL;
       }
     }
 
