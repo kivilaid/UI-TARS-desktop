@@ -76,16 +76,42 @@ export class MessageHistory {
    * @param toolCallEngine The tool call engine to use for message formatting
    * @param systemPrompt The base system prompt to include
    * @param tools Available tools to enhance the system prompt
-   * @param sessionId Optional session ID for compression context
-   * @param iteration Optional iteration number for compression context
    */
-  async toMessageHistory(
+  toMessageHistory(
+    toolCallEngine: ToolCallEngine,
+    customSystemPrompt: string,
+    tools?: Tool[],
+  ): ChatCompletionMessageParam[];
+  
+  /**
+   * Convert events to message history format for LLM context with async compression support
+   * This method uses the provided toolCallEngine to format messages
+   * according to the specific requirements of the underlying LLM
+   *
+   * @param toolCallEngine The tool call engine to use for message formatting
+   * @param systemPrompt The base system prompt to include
+   * @param tools Available tools to enhance the system prompt
+   * @param sessionId Session ID for compression context
+   * @param iteration Iteration number for compression context
+   */
+  toMessageHistory(
+    toolCallEngine: ToolCallEngine,
+    customSystemPrompt: string,
+    tools: Tool[],
+    sessionId: string,
+    iteration: number,
+  ): Promise<ChatCompletionMessageParam[]>;
+  
+  /**
+   * Implementation of toMessageHistory with optional async compression
+   */
+  toMessageHistory(
     toolCallEngine: ToolCallEngine,
     customSystemPrompt: string,
     tools: Tool[] = [],
     sessionId?: string,
     iteration?: number,
-  ): Promise<ChatCompletionMessageParam[]> {
+  ): ChatCompletionMessageParam[] | Promise<ChatCompletionMessageParam[]> {
     const baseSystemPrompt = this.getSystemPromptWithTime(customSystemPrompt);
     // Start with the enhanced system message
     const enhancedSystemPrompt = toolCallEngine.preparePrompt(baseSystemPrompt, tools);
@@ -105,27 +131,29 @@ export class MessageHistory {
     // Create a unified processing path with optional image limiting
     this.processEvents(events, messages, toolCallEngine);
 
-    // Apply context compression if configured
+    // Apply context compression if configured and sessionId/iteration are provided
     if (this.compressionManager && sessionId && iteration !== undefined) {
-      const compressionResult = await this.compressionManager.compressIfNeeded(
+      // Return async version with compression
+      return this.compressionManager.compressIfNeeded(
         messages,
         sessionId,
         iteration,
         events
-      );
-      
-      if (compressionResult.wasCompressed) {
-        this.logger.info(
-          `Context compressed | Original: ${compressionResult.stats.originalTokens} tokens | ` +
-          `Compressed: ${compressionResult.stats.compressedTokens} tokens | ` +
-          `Ratio: ${(compressionResult.stats.compressionRatio * 100).toFixed(1)}% | ` +
-          `Strategies: ${compressionResult.stats.appliedStrategies.join(', ')}`
-        );
-      }
-      
-      return compressionResult.messages;
+      ).then(compressionResult => {
+        if (compressionResult.wasCompressed) {
+          this.logger.info(
+            `Context compressed | Original: ${compressionResult.stats.originalTokens} tokens | ` +
+            `Compressed: ${compressionResult.stats.compressedTokens} tokens | ` +
+            `Ratio: ${(compressionResult.stats.compressionRatio * 100).toFixed(1)}% | ` +
+            `Strategies: ${compressionResult.stats.appliedStrategies.join(', ')}`
+          );
+        }
+        
+        return compressionResult.messages;
+      });
     }
 
+    // Return sync version without compression
     return messages;
   }
 
