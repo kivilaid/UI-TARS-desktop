@@ -241,7 +241,7 @@ export class ContextCompressionManager {
     return messages.reduce((count, message) => {
       if (Array.isArray(message.content)) {
         return count + message.content.filter(
-          part => typeof part === 'object' && (part.type === 'image_url' || part.type === 'image')
+          (part: any) => typeof part === 'object' && (part.type === 'image_url' || part.type === 'image')
         ).length;
       }
       return count;

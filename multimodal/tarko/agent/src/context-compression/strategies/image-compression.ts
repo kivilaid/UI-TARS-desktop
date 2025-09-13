@@ -74,7 +74,7 @@ export class ImageCompressionStrategy implements ContextCompressionStrategy {
     // Process messages and compress images
     const compressedMessages = messages.map((message, messageIndex) => {
       if (Array.isArray(message.content)) {
-        const compressedContent = message.content.map((part, contentIndex) => {
+        const compressedContent = message.content.map((part: any, contentIndex) => {
           const key = `${messageIndex}:${contentIndex}`;
           if (imagesToCompress.has(key) && this.isImagePart(part)) {
             return {
@@ -88,7 +88,7 @@ export class ImageCompressionStrategy implements ContextCompressionStrategy {
         return {
           ...message,
           content: compressedContent
-        };
+        } as ChatCompletionMessageParam;
       }
       return message;
     });
@@ -122,7 +122,7 @@ export class ImageCompressionStrategy implements ContextCompressionStrategy {
       
       if (Array.isArray(message.content)) {
         for (let contentIndex = 0; contentIndex < message.content.length; contentIndex++) {
-          const part = message.content[contentIndex];
+          const part = message.content[contentIndex] as any;
           if (this.isImagePart(part)) {
             references.push({ messageIndex, contentIndex });
           }
@@ -133,14 +133,14 @@ export class ImageCompressionStrategy implements ContextCompressionStrategy {
     return references;
   }
 
-  private isImagePart(part: ChatCompletionContentPart): boolean {
+  private isImagePart(part: any): boolean {
     return typeof part === 'object' && (part.type === 'image_url' || part.type === 'image');
   }
 
   private countImages(messages: ChatCompletionMessageParam[]): number {
     return messages.reduce((count, message) => {
       if (Array.isArray(message.content)) {
-        return count + message.content.filter(part => this.isImagePart(part)).length;
+        return count + message.content.filter((part: any) => this.isImagePart(part)).length;
       }
       return count;
     }, 0);

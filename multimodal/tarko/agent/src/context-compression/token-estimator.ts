@@ -97,7 +97,7 @@ export class SimpleTokenEstimator implements TokenEstimator {
   /**
    * Estimate tokens for content part (text or image)
    */
-  private estimateContentPartTokens(part: ChatCompletionContentPart): number {
+  private estimateContentPartTokens(part: ChatCompletionContentPart | any): number {
     if (part.type === 'text') {
       return this.estimateTextTokens(part.text);
     } else if (part.type === 'image_url') {
@@ -105,7 +105,7 @@ export class SimpleTokenEstimator implements TokenEstimator {
       const imageData = this.extractImageMetadata(part.image_url);
       return this.estimateImageTokens(imageData);
     } else if (part.type === 'image') {
-      // Direct image data
+      // Direct image data (legacy support)
       return this.estimateImageTokens(part);
     }
     
