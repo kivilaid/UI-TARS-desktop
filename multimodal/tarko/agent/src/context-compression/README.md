@@ -282,6 +282,58 @@ agent.getEventStream().subscribe((event) => {
 });
 ```
 
+## Safety Guarantees
+
+The context compression system includes multiple layers of safety to prevent context overflow:
+
+### 1. Multi-Layer Protection
+
+- **Preprocessing**: Automatically truncates oversized individual messages
+- **Strategy Compression**: Applies the selected compression strategy
+- **Validation**: Validates compressed results don't exceed limits
+- **Emergency Compression**: Last-resort aggressive compression if needed
+- **Graceful Fallback**: Returns minimal viable context if all else fails
+
+### 2. Emergency Compression
+
+When normal compression strategies fail or produce oversized results:
+
+```typescript
+// Automatic emergency compression
+const contextManager = new ContextManager({
+  strategy: 'sliding_window',
+  compressionThreshold: 0.7,
+});
+
+// If normal compression fails, emergency compression automatically triggers:
+// 1. Keeps system messages (truncated if needed)
+// 2. Keeps last user message (truncated if needed)
+// 3. Discards everything else
+// 4. Ensures result fits in 50% of context window
+```
+
+### 3. Safety Margins
+
+- **5% preprocessing margin**: Prevents edge cases during compression
+- **10% validation margin**: Ensures compressed results have breathing room
+- **50% emergency limit**: Conservative emergency compression target
+
+### 4. Oversized Message Handling
+
+```typescript
+// Individual messages exceeding 30% of context window are automatically truncated
+const message = {
+  role: 'user',
+  content: 'Very long content...', // If > 30% of context window
+};
+
+// Becomes:
+// {
+//   role: 'user',
+//   content: 'Truncated content... [truncated for context limit]'
+// }
+```
+
 ## Best Practices
 
 1. **Choose the right strategy**:
@@ -301,9 +353,15 @@ agent.getEventStream().subscribe((event) => {
    - Consider the trade-off between context preservation and performance
 
 4. **Handle compression gracefully**:
-   - The system falls back to original messages if compression fails
+   - The system has multiple fallback layers
    - Monitor system events for compression notifications
+   - Emergency compression events are logged with `[EMERGENCY]` marker
    - Test with your specific conversation patterns
+
+5. **Safety monitoring**:
+   - Watch for emergency compression events in logs
+   - Adjust thresholds if emergency compression triggers frequently
+   - Consider using more aggressive strategies for high-volume scenarios
 
 ## Troubleshooting
 

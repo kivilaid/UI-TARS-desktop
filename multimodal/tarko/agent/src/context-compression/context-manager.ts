@@ -17,6 +17,7 @@ import { resolveCompressionStrategy } from './strategies/registry';
 import { ChatCompletionMessageParam } from '@tarko/model-provider/types';
 import { AgentEventStream } from '@tarko/agent-interface';
 import { getLogger } from '@tarko/shared-utils';
+import { ContextSafetyGuards } from './safety-guards';
 
 /**
  * Context Manager - Orchestrates context compression
@@ -35,6 +36,7 @@ export class ContextManager {
   private tokenCounter: TokenCounter;
   private compressionHistory: CompressionEvent[] = [];
   private compressionCount = 0;
+  private safetyGuards: ContextSafetyGuards;
   
   constructor(
     config: Partial<ContextCompressionConfig> = {},
@@ -51,6 +53,9 @@ export class ContextManager {
       // Use default token counter
       this.tokenCounter = getTokenCounter('default', 'default');
     }
+    
+    // Initialize safety guards
+    this.safetyGuards = new ContextSafetyGuards(this.tokenCounter);
     
     this.logger.info(
       `ContextManager initialized with strategy: ${this.strategy.name}, ` +
@@ -79,6 +84,7 @@ export class ContextManager {
    */
   updateModel(modelId: string, provider: string): void {
     this.tokenCounter = getTokenCounter(modelId, provider);
+    this.safetyGuards = new ContextSafetyGuards(this.tokenCounter);
     this.logger.debug(`Updated token counter for model: ${provider}/${modelId}`);
   }
   
@@ -167,13 +173,24 @@ export class ContextManager {
       `Starting compression for session ${sessionId} (iteration ${iteration}) using strategy: ${this.strategy.name}`
     );
     
+    // Preprocess messages to handle oversized content
+    const preprocessedMessages = await this.safetyGuards.preprocessMessages(messages);
+    
     // Count current tokens
-    const currentTokens = await this.tokenCounter.countTokens(messages);
+    const currentTokens = await this.tokenCounter.countTokens(preprocessedMessages);
     const maxTokens = this.tokenCounter.getContextWindow();
+    
+    // Validate context size
+    const validation = await this.safetyGuards.validateContextSize(preprocessedMessages, 0.05); // 5% safety margin
+    if (!validation.isValid) {
+      this.logger.warn(
+        `Context size validation failed: ${validation.currentTokens} tokens exceeds safe limit of ${validation.maxTokens} by ${validation.exceedsBy} tokens`
+      );
+    }
     
     // Create compression context
     const context: CompressionContext = {
-      messages,
+      messages: preprocessedMessages,
       events,
       currentTokens,
       maxTokens,
@@ -196,6 +213,34 @@ export class ContextManager {
       // Perform compression using the selected strategy
       const result = await this.strategy.compress(context);
       
+      // Validate compressed result
+      const compressedValidation = await this.safetyGuards.validateContextSize(result.messages, 0.1); // 10% safety margin for result
+      
+      if (!compressedValidation.isValid) {
+        this.logger.warn(
+          `Compressed result still exceeds limits: ${compressedValidation.currentTokens} tokens. Applying emergency compression...`
+        );
+        
+        // Apply emergency compression
+        const emergencyMessages = await this.safetyGuards.emergencyCompress(
+          result.messages,
+          maxTokens
+        );
+        
+        const emergencyTokens = await this.tokenCounter.countTokens(emergencyMessages);
+        
+        // Update result with emergency compression
+        result.messages = emergencyMessages;
+        result.estimatedTokens = emergencyTokens;
+        result.stats.compressedTokens = emergencyTokens;
+        result.stats.compressedMessageCount = emergencyMessages.length;
+        result.stats.compressionRatio = 1 - (emergencyTokens / result.stats.originalTokens);
+        result.metadata = {
+          ...result.metadata,
+          emergencyCompressionApplied: true,
+        };
+      }
+      
       // Update compression count
       this.compressionCount++;
       
@@ -213,13 +258,45 @@ export class ContextManager {
       this.logger.info(
         `Compression completed: ${result.stats.originalMessageCount} → ${result.stats.compressedMessageCount} messages, ` +
         `${result.stats.originalTokens} → ${result.stats.compressedTokens} tokens ` +
-        `(${(result.stats.compressionRatio * 100).toFixed(1)}% reduction) in ${result.stats.compressionTimeMs}ms`
+        `(${(result.stats.compressionRatio * 100).toFixed(1)}% reduction) in ${result.stats.compressionTimeMs}ms` +
+        (result.metadata?.emergencyCompressionApplied ? ' [EMERGENCY]' : '')
       );
       
       return result;
     } catch (error) {
       this.logger.error(`Compression failed for session ${sessionId}: ${error}`);
-      throw error;
+      
+      // Last resort: emergency compression
+      this.logger.warn('Applying emergency compression as fallback...');
+      try {
+        const emergencyMessages = await this.safetyGuards.emergencyCompress(
+          context.messages,
+          maxTokens
+        );
+        
+        const emergencyTokens = await this.tokenCounter.countTokens(emergencyMessages);
+        
+        return {
+          messages: emergencyMessages,
+          estimatedTokens: emergencyTokens,
+          stats: {
+            originalTokens: context.currentTokens,
+            compressedTokens: emergencyTokens,
+            compressionRatio: 1 - (emergencyTokens / context.currentTokens),
+            originalMessageCount: context.messages.length,
+            compressedMessageCount: emergencyMessages.length,
+            compressionTimeMs: Date.now() - startTime,
+            strategy: 'emergency_fallback',
+          },
+          metadata: {
+            emergencyFallback: true,
+            originalError: String(error),
+          },
+        };
+      } catch (emergencyError) {
+        this.logger.error(`Emergency compression also failed: ${emergencyError}`);
+        throw error; // Re-throw original error
+      }
     }
   }
   

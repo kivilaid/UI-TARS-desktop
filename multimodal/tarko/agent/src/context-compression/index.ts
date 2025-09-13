@@ -7,3 +7,4 @@ export * from './types';
 export * from './strategies';
 export * from './context-manager';
 export * from './token-counter';
+export * from './safety-guards';
