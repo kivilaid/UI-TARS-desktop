@@ -193,7 +193,7 @@ export class LLMProcessor {
     this.messageHistory.updateSession(sessionId, iteration, currentModel.id, currentModel.provider);
 
     // Build messages for current iteration including enhanced system message
-    const messages = await this.messageHistory.toMessageHistory(
+    const messages = await this.messageHistory.toMessageHistoryAsync(
       toolCallEngine,
       finalSystemPrompt,
       finalTools,

@@ -89,29 +89,31 @@ export class MessageHistory {
    * @param systemPrompt The base system prompt to include
    * @param tools Available tools to enhance the system prompt
    */
-  async toMessageHistory(
+  toMessageHistory(
+    toolCallEngine: ToolCallEngine,
+    customSystemPrompt: string,
+    tools: Tool[] = [],
+  ): ChatCompletionMessageParam[] {
+    // For backward compatibility, use synchronous processing
+    // Async compression will be handled separately in the agent runner
+    return this.buildMessageHistorySync(toolCallEngine, customSystemPrompt, tools);
+  }
+
+  /**
+   * Async version of toMessageHistory with context compression support
+   * This method should be used by the agent runner for compression capabilities
+   *
+   * @param toolCallEngine The tool call engine to use for message formatting
+   * @param systemPrompt The base system prompt to include
+   * @param tools Available tools to enhance the system prompt
+   */
+  async toMessageHistoryAsync(
     toolCallEngine: ToolCallEngine,
     customSystemPrompt: string,
     tools: Tool[] = [],
   ): Promise<ChatCompletionMessageParam[]> {
-    const baseSystemPrompt = this.getSystemPromptWithTime(customSystemPrompt);
-    // Start with the enhanced system message
-    const enhancedSystemPrompt = toolCallEngine.preparePrompt(baseSystemPrompt, tools);
-    const messages: ChatCompletionMessageParam[] = Array.isArray(enhancedSystemPrompt)
-      ? enhancedSystemPrompt.map((sp) => ({
-          role: 'system',
-          content: sp,
-        }))
-      : [{ role: 'system', content: enhancedSystemPrompt }];
-
-    this.logger.debug(
-      `Created system message with prompt ${enhancedSystemPrompt.length} chars long`,
-    );
-
+    const messages = this.buildMessageHistorySync(toolCallEngine, customSystemPrompt, tools);
     const events = this.eventStream.getEvents();
-
-    // Create a unified processing path with optional image limiting
-    this.processEvents(events, messages, toolCallEngine);
 
     // Apply context compression if enabled
     if (this.contextManager && this.sessionId) {
@@ -156,6 +158,36 @@ export class MessageHistory {
         }
       }
     }
+
+    return messages;
+  }
+
+  /**
+   * Build message history synchronously (for backward compatibility)
+   */
+  private buildMessageHistorySync(
+    toolCallEngine: ToolCallEngine,
+    customSystemPrompt: string,
+    tools: Tool[] = [],
+  ): ChatCompletionMessageParam[] {
+    const baseSystemPrompt = this.getSystemPromptWithTime(customSystemPrompt);
+    // Start with the enhanced system message
+    const enhancedSystemPrompt = toolCallEngine.preparePrompt(baseSystemPrompt, tools);
+    const messages: ChatCompletionMessageParam[] = Array.isArray(enhancedSystemPrompt)
+      ? enhancedSystemPrompt.map((sp) => ({
+          role: 'system',
+          content: sp,
+        }))
+      : [{ role: 'system', content: enhancedSystemPrompt }];
+
+    this.logger.debug(
+      `Created system message with prompt ${enhancedSystemPrompt.length} chars long`,
+    );
+
+    const events = this.eventStream.getEvents();
+
+    // Create a unified processing path with optional image limiting
+    this.processEvents(events, messages, toolCallEngine);
 
     return messages;
   }
