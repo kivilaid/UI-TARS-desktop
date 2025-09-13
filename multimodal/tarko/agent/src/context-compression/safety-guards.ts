@@ -92,13 +92,13 @@ export class ContextSafetyGuards {
         const targetLength = Math.floor(maxTokens * 3.5);
         if (firstTextPart.text && firstTextPart.text.length > targetLength) {
           return {
-            ...message,
-            content: [{
-              type: 'text',
-              text: firstTextPart.text.substring(0, targetLength - 50) + 
-                '... [truncated for context limit]'
-            }]
-          };
+          ...message,
+          content: [{
+          type: 'text',
+          text: firstTextPart.text.substring(0, targetLength - 50) + 
+          '... [truncated for context limit]'
+          }]
+          } as ChatCompletionMessageParam;
         }
       }
     }
