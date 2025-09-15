@@ -8,6 +8,7 @@ import {
 
 import { ChatCompletionContentPart, AgentModel } from '@tarko/agent-interface';
 import { AgentServerVersionInfo } from '@agent-tars/interface';
+import { handleErrorNotification } from '../utils/notification';
 
 /**
  * Workspace item interface for contextual selector
@@ -43,9 +44,14 @@ class ApiService {
         signal: AbortSignal.timeout(3000),
       });
 
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
       return response.ok;
     } catch (error) {
       console.error('Error checking server health:', error);
+      handleErrorNotification(error);
       return false;
     }
   }
@@ -68,6 +74,7 @@ class ApiService {
       return session as SessionInfo;
     } catch (error) {
       console.error('Error creating session:', error);
+      handleErrorNotification(error);
       throw error;
     }
   }
@@ -90,6 +97,7 @@ class ApiService {
       return sessions;
     } catch (error) {
       console.error('Error getting sessions:', error);
+      handleErrorNotification(error);
       throw error;
     }
   }
@@ -116,6 +124,7 @@ class ApiService {
       return session;
     } catch (error) {
       console.error(`Error getting session details (${sessionId}):`, error);
+      handleErrorNotification(error);
       throw error;
     }
   }
@@ -131,7 +140,7 @@ class ApiService {
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-          signal: AbortSignal.timeout(5000), // Add 5 second timeout
+          signal: AbortSignal.timeout(60000), // Add 5 second timeout
         },
       );
 
@@ -143,6 +152,7 @@ class ApiService {
       return events;
     } catch (error) {
       console.error(`Error getting session events (${sessionId}):`, error);
+      handleErrorNotification(error);
       throw error;
     }
   }
