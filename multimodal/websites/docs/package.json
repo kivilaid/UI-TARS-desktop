@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@agent-tars/docs",
-  "version": "0.3.0-beta.11",
+  "version": "0.3.0-beta.11-canary-5be3a5857-20250916093349",
   "scripts": {
     "build": "rspress build",
     "dev": "rspress dev",
