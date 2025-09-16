@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.0-beta.11-canary-5be3a5857-20250916093349](https://github.com/bytedance/UI-TARS-desktop/compare/v0.3.0-beta.11-canary-dd1365527-20250916072628...v0.3.0-beta.11-canary-5be3a5857-20250916093349) (2025-09-16)
+
+### Features
+
+* **tarko:** solve the main branch diff ([5be3a58](https://github.com/bytedance/UI-TARS-desktop/commit/5be3a5857)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** add cors allow header for agent-server-next ([84f20cc](https://github.com/bytedance/UI-TARS-desktop/commit/84f20cc27)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** add sandbox create mock url ([b09f900](https://github.com/bytedance/UI-TARS-desktop/commit/b09f90069)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** delete the API level and move controllers and routes to the outermost layer ([a143976](https://github.com/bytedance/UI-TARS-desktop/commit/a143976b1)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** add dao layer and move all db operations into this layer ([674f531](https://github.com/bytedance/UI-TARS-desktop/commit/674f53112)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** move agent session location and rename it ([9ccb9a7](https://github.com/bytedance/UI-TARS-desktop/commit/9ccb9a7ed)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** fix db issues for agent server next ([77002f5](https://github.com/bytedance/UI-TARS-desktop/commit/77002f501)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** getAllSessions query optimization ([3af2665](https://github.com/bytedance/UI-TARS-desktop/commit/3af266524)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** delete task md ([bf1d5a2](https://github.com/bytedance/UI-TARS-desktop/commit/bf1d5a268)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** fix all issues for server next mvp version' ([004f70b](https://github.com/bytedance/UI-TARS-desktop/commit/004f70bf2)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** getAllSessions update ([6a88487](https://github.com/bytedance/UI-TARS-desktop/commit/6a88487f2)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** update session bugfix ([3723620](https://github.com/bytedance/UI-TARS-desktop/commit/3723620ab)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** keep error structure the same with old server ([88f37b9](https://github.com/bytedance/UI-TARS-desktop/commit/88f37b9e5)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** storage provider apis update ([e39f863](https://github.com/bytedance/UI-TARS-desktop/commit/e39f86344)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** add apis and routes for server next ([fc8e9e8](https://github.com/bytedance/UI-TARS-desktop/commit/fc8e9e8dd)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko:** agent server next ([c423902](https://github.com/bytedance/UI-TARS-desktop/commit/c423902f7)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+* **tarko-pnpm-toolkit:** add --auto-create-release-branch support ([bf5456e](https://github.com/bytedance/UI-TARS-desktop/commit/bf5456ebd)) [@chenhaoli](https://github.com/chenhaoli)
+
+### Bug Fixes
+
+* **tarko:** fix aio url setting in agent-server-next ([01aeeab](https://github.com/bytedance/UI-TARS-desktop/commit/01aeeab89)) [@chenjian.bzh](https://github.com/chenjian.bzh)
+
 ## [0.3.0-beta.11](https://github.com/bytedance/UI-TARS-desktop/compare/@agent-tars@0.3.0-beta.10...v0.3.0-beta.11) (2025-09-09)
 
 ### Features
