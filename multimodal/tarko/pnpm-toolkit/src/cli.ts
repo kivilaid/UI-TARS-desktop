@@ -96,6 +96,9 @@ export function bootstrapCli() {
     .option('--canary', 'Skip version/tag selection and auto-generate canary version', {
       default: false,
     })
+    .option('--auto-create-release-branch', 'Automatically create a release branch for canary releases', {
+      default: false,
+    })
     .option('--use-ai', 'Use AI to generate changelog', {
       default: false,
     })
