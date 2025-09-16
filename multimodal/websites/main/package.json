@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@agent-tars/website",
-  "version": "0.3.0-beta.11",
+  "version": "0.3.0-beta.11-canary-98669a9ab-20250916152131",
   "description": "agent-tars.com",
   "dependencies": {
     "@emotion/styled": "^11.11.0",
