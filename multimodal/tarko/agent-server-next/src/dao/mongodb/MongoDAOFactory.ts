@@ -5,7 +5,6 @@
 
 import mongoose, { Connection, ConnectOptions } from 'mongoose';
 import { MongoDBAgentStorageImplementation } from '@tarko/interface';
-import { getLogger } from '@tarko/shared-utils';
 import { 
   IDAOFactory, 
   IUserConfigDAO, 
@@ -23,6 +22,7 @@ import {
   UserConfigModel,
   SandboxAllocationModel,
 } from '../../storage/MongoDBStorageProvider/MongoDBSchemas';
+import { getLogger } from '../../utils/logger';
 
 const logger = getLogger('MongoDAOFactory');
 

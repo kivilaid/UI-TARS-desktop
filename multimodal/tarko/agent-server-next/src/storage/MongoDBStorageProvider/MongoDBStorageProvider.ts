@@ -5,11 +5,10 @@
 
 import { Model } from 'mongoose';
 import { AgentEventStream, MongoDBAgentStorageImplementation, SessionInfo } from '@tarko/interface';
-import { getLogger } from '@tarko/shared-utils';
 import { StorageProvider } from '../types';
-import { UserConfigDocument, SandboxAllocationDocument } from './MongoDBSchemas';
 import { MongoDAOFactory } from '../../dao/mongodb/MongoDAOFactory';
 import { IDAOFactory } from '../../dao/interfaces/IDAOFactory';
+import { getLogger } from '../../utils/logger';
 
 const logger = getLogger('MongoDBStorageProvider');
 
