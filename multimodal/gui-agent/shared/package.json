@@ -1,6 +1,6 @@
 {
   "name": "@gui-agent/shared",
-  "version": "0.3.0-beta.6",
+  "version": "0.3.0-beta.11-canary-e70d431f-20250917163005",
   "description": "Shared types for GUI-Agent",
   "repository": {
     "type": "git",
