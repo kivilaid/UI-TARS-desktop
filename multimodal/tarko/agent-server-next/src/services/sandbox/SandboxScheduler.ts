@@ -23,6 +23,7 @@ export interface SandboxSchedulerOptions {
 export class SandboxScheduler {
   private sandboxManager: SandboxManager;
   private sandboxAllocationDAO: ISandboxAllocationDAO;
+  private storageProvider: StorageProvider;
   private logger: ILogger;
 
   constructor(options: SandboxSchedulerOptions) {

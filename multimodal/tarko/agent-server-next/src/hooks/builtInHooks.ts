@@ -68,7 +68,7 @@ export const AccessLogHook: HookRegistrationOptions = {
 
 
 
-export const AuthHook: HookRegistrationOptions ={
+export const AuthHook: HookRegistrationOptions = {
     id: 'auth',
     name: 'Authentication',
     priority: BuiltInPriorities.AUTH,

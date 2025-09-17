@@ -28,7 +28,7 @@ export interface ILogger {
   warn(message: string, ...args: any[]): void;
   debug(message: string, ...args: any[]): void;
   spawn?(module: string): ILogger;
-  setLevel(level: any): void;
+  setLevel?(level: any): void;
 }
 /**
  * AgentServer initialization options
