@@ -1,6 +1,6 @@
 {
   "name": "@tarko/agent-ui-builder",
-  "version": "0.3.0-beta.11",
+  "version": "0.3.0-beta.11-canary-b91e1361-20250917120734",
   "description": "Agent UI builder for generating replay HTML files",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
