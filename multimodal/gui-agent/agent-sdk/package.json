@@ -1,6 +1,6 @@
 {
   "name": "@multimodal/seed-gui-agent",
-  "version": "0.3.0-beta.12",
+  "version": "0.3.0-beta.12-canary-87dd3b96-20250919093721",
   "description": "seed GUI Agent",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
