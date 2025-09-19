@@ -9,7 +9,7 @@ import { getToolCallEngineForProvider } from '../../src/tool-call-engine/engine-
 describe('ProviderEngineSelector', () => {
   describe('getToolCallEngineForProvider', () => {
     it('should return structured_outputs for volcengine', () => {
-      expect(getToolCallEngineForProvider('volcengine')).toBe('structured_outputs');
+      expect(getToolCallEngineForProvider('volcengine')).toBe('prompt_engineering');
     });
 
     it('should return native for OpenAI providers', () => {

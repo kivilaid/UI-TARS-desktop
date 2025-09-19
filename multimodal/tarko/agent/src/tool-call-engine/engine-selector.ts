@@ -25,7 +25,7 @@ export function getToolCallEngineForProvider(provider?: string): ToolCallEngineT
 
   switch (provider.toLowerCase()) {
     case 'volcengine':
-      return 'structured_outputs';
+      return 'prompt_engineering';
     case 'openai':
     case 'azure-openai':
     case 'anthropic':
