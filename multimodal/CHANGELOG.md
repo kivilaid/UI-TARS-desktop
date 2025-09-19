@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.3.0-beta.12-canary-32a29a665-20250919050316](https://github.com/bytedance/UI-TARS-desktop/compare/v0.3.0-beta.12...v0.3.0-beta.12-canary-32a29a665-20250919050316) (2025-09-19)
+
+### Features
+
+* **agent-tars:** optimize AIO sandbox example tool listing ([a7e404e](https://github.com/bytedance/UI-TARS-desktop/commit/a7e404e7a)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** add base environment class to reduce code duplication ([43bdd56](https://github.com/bytedance/UI-TARS-desktop/commit/43bdd568a)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** refactor environment architecture to eliminate local dependencies in AIO mode ([6c0e921](https://github.com/bytedance/UI-TARS-desktop/commit/6c0e9211f)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** remove local tool registration from AIO environment ([8d38412](https://github.com/bytedance/UI-TARS-desktop/commit/8d38412c4)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** complete main class cleanup and environment delegation ([8a60ee2](https://github.com/bytedance/UI-TARS-desktop/commit/8a60ee222)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** reorganize directory structure by environment ([3f40ab4](https://github.com/bytedance/UI-TARS-desktop/commit/3f40ab40e)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** complete environment pattern with component ownership ([46402ec](https://github.com/bytedance/UI-TARS-desktop/commit/46402ec23)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** upgrade initializers to environment pattern ([2253105](https://github.com/bytedance/UI-TARS-desktop/commit/22531052f)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** refactor aio sandbox support with proper initializer architecture ([7708e74](https://github.com/bytedance/UI-TARS-desktop/commit/7708e7417)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** add aioSandbox support ([6bc6751](https://github.com/bytedance/UI-TARS-desktop/commit/6bc6751bf)) [@chenhaoli](https://github.com/chenhaoli)
+* **tarko-agent-cli:** support unknown options passthrough ([#1574](https://github.com/bytedance/UI-TARS-desktop/pull/1574)) ([f1f2ccd](https://github.com/bytedance/UI-TARS-desktop/commit/f1f2ccda9)) [@ULIVZ](https://github.com/ULIVZ)
+
+### Bug Fixes
+
+* **agent-tars:** update AIO environment test for new MCP format ([32a29a6](https://github.com/bytedance/UI-TARS-desktop/commit/32a29a665)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** limit tool description length in AIO example ([ad40289](https://github.com/bytedance/UI-TARS-desktop/commit/ad40289f6)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** correct import paths after environment restructuring ([a8e6491](https://github.com/bytedance/UI-TARS-desktop/commit/a8e64917f)) [@chenhaoli](https://github.com/chenhaoli)
+* **agent-tars:** replace any types with strict AgentEventStream.Processor ([c65c986](https://github.com/bytedance/UI-TARS-desktop/commit/c65c98619)) [@chenhaoli](https://github.com/chenhaoli)
+* **tarko-agent-ui:** improve monaco editor line numbers spacing ([#1571](https://github.com/bytedance/UI-TARS-desktop/pull/1571)) ([77a2a27](https://github.com/bytedance/UI-TARS-desktop/commit/77a2a27a4)) [@ULIVZ](https://github.com/ULIVZ)
+
 ## [0.3.0-beta.12](https://github.com/bytedance/UI-TARS-desktop/compare/v0.3.0-beta.11-canary-e70d431f-20250917163005...v0.3.0-beta.12) (2025-09-18)
 
 ### Features
